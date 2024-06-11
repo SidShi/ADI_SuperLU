@@ -368,9 +368,9 @@ int main(int argc, char *argv[])
     if ((iam_A != -1) || (iam_B != -1) || (iam_C != -1)) {
         dread_shift_multigrids(fp_shift1, &pp1, &qq1, &ll1, grids, grid_proc, 3);
 
-        printf("Proc %d in grid_A, %d in grid_B and %d in grid_C gets first elements of second shift with length %d to be %f and %f.\n", 
-            iam_A, iam_B, iam_C, ll1, pp1[0], qq1[0]);
-        fflush(stdout);
+        // printf("Proc %d in grid_A, %d in grid_B and %d in grid_C gets first elements of second shift with length %d to be %f and %f.\n", 
+        //     iam_A, iam_B, iam_C, ll1, pp1[0], qq1[0]);
+        // fflush(stdout);
 
         if (!iam_A) {
             printf("Read universal shifts for the equation!\n");
@@ -409,27 +409,27 @@ int main(int argc, char *argv[])
             fflush(stdout);
         }
 
-        if (iam_A != -1) {
-            printf("Proc %d in A gets U2 with ldu2 %d.\n", iam_A, ldu2);
-            for (i = 0; i < ldu2; ++i) {
-                for (j = 0; j < r2*m_B; ++j) {
-                    printf("%f ", U2[j*ldu2+i]);
-                }
-                printf("\n");
-            }
-            fflush(stdout);
-        }
+        // if (iam_A != -1) {
+        //     printf("Proc %d in A gets U2 with ldu2 %d.\n", iam_A, ldu2);
+        //     for (i = 0; i < ldu2; ++i) {
+        //         for (j = 0; j < r2*m_B; ++j) {
+        //             printf("%f ", U2[j*ldu2+i]);
+        //         }
+        //         printf("\n");
+        //     }
+        //     fflush(stdout);
+        // }
 
-        if (iam_B != -1) {
-            printf("Proc %d in B gets U2T with ldu2t %d.\n", iam_B, ldu2t);
-            for (i = 0; i < ldu2t; ++i) {
-                for (j = 0; j < r2*m_A; ++j) {
-                    printf("%f ", U2T[j*ldu2t+i]);
-                }
-                printf("\n");
-            }
-            fflush(stdout);
-        }
+        // if (iam_B != -1) {
+        //     printf("Proc %d in B gets U2T with ldu2t %d.\n", iam_B, ldu2t);
+        //     for (i = 0; i < ldu2t; ++i) {
+        //         for (j = 0; j < r2*m_A; ++j) {
+        //             printf("%f ", U2T[j*ldu2t+i]);
+        //         }
+        //         printf("\n");
+        //     }
+        //     fflush(stdout);
+        // }
         // printf("Grid_B proc %d gets first and last element of V to be %f and %f.\n", iam_B, V[0], V[ldv*r-1]);
         // fflush(stdout);
     }

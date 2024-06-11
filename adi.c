@@ -1645,14 +1645,14 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
             }
         }
 
-        printf("Proc %d in grid_A gets Z after 1st solve.\n", grid_A->iam);
-        for (i = 0; i < ldu1; ++i) {
-            for (j = 0; j < r1; ++j) {
-                printf("%f ", localZ[j*ldu1+i]);
-            }
-            printf("\n");
-        }
-        fflush(stdout);
+        // printf("Proc %d in grid_A gets Z after 1st solve.\n", grid_A->iam);
+        // for (i = 0; i < ldu1; ++i) {
+        //     for (j = 0; j < r1; ++j) {
+        //         printf("%f ", localZ[j*ldu1+i]);
+        //     }
+        //     printf("\n");
+        // }
+        // fflush(stdout);
         MPI_Barrier(grid_A->comm);
     }
 
@@ -1664,14 +1664,14 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
                 }
             }
 
-            printf("Proc %d in grid_A gets RHS for 1st solve.\n", grid_A->iam);
-            for (i = 0; i < ldu2; ++i) {
-                for (j = 0; j < r2*m_B; ++j) {
-                    printf("%f ", rhs_B[j*ldu2+i]);
-                }
-                printf("\n");
-            }
-            fflush(stdout);
+            // printf("Proc %d in grid_A gets RHS for 1st solve.\n", grid_A->iam);
+            // for (i = 0; i < ldu2; ++i) {
+            //     for (j = 0; j < r2*m_B; ++j) {
+            //         printf("%f ", rhs_B[j*ldu2+i]);
+            //     }
+            //     printf("\n");
+            // }
+            // fflush(stdout);
         }
         if (iam_B != -1) {
             for (j = 0; j < r2*m_A; ++j) {
@@ -1680,14 +1680,14 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
                 }
             }
 
-            printf("Proc %d in grid_B gets RHS for 1st solve.\n", grid_B->iam);
-            for (i = 0; i < ldu2t; ++i) {
-                for (j = 0; j < r2*m_A; ++j) {
-                    printf("%f ", rhs_BT[j*ldu2t+i]);
-                }
-                printf("\n");
-            }
-            fflush(stdout);
+            // printf("Proc %d in grid_B gets RHS for 1st solve.\n", grid_B->iam);
+            // for (i = 0; i < ldu2t; ++i) {
+            //     for (j = 0; j < r2*m_A; ++j) {
+            //         printf("%f ", rhs_BT[j*ldu2t+i]);
+            //     }
+            //     printf("\n");
+            // }
+            // fflush(stdout);
         }
         adi_ls2(options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, m_B, nnz_B, nzval_B_neg, rowind_B_neg, colptr_B_neg,
             grid_A, grid_B, rhs_B, ldu2, rhs_BT, ldu2t, r2, q[0], la, ua, lb, ub, iterW_comb, grid_proc, 0, 1);
@@ -1709,27 +1709,27 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
                 }
             }
 
-            printf("Proc %d in grid_B gets WT after 1st solve.\n", grid_B->iam);
-            for (i = 0; i < ldu2t; ++i) {
-                for (j = 0; j < r2*m_A; ++j) {
-                    printf("%f ", iterW_T[j*ldu2t+i]);
-                }
-                printf("\n");
-            }
-            fflush(stdout);
+            // printf("Proc %d in grid_B gets WT after 1st solve.\n", grid_B->iam);
+            // for (i = 0; i < ldu2t; ++i) {
+            //     for (j = 0; j < r2*m_A; ++j) {
+            //         printf("%f ", iterW_T[j*ldu2t+i]);
+            //     }
+            //     printf("\n");
+            // }
+            // fflush(stdout);
 
             MPI_Barrier(grid_B->comm);
         }
 
         if (iam_A != -1) {
-            printf("Proc %d in grid_A gets W after 1st solve.\n", grid_A->iam);
-            for (i = 0; i < ldu2; ++i) {
-                for (j = 0; j < r2*m_B; ++j) {
-                    printf("%f ", iterW[j*ldu2+i]);
-                }
-                printf("\n");
-            }
-            fflush(stdout);
+            // printf("Proc %d in grid_A gets W after 1st solve.\n", grid_A->iam);
+            // for (i = 0; i < ldu2; ++i) {
+            //     for (j = 0; j < r2*m_B; ++j) {
+            //         printf("%f ", iterW[j*ldu2+i]);
+            //     }
+            //     printf("\n");
+            // }
+            // fflush(stdout);
 
             MPI_Barrier(grid_A->comm);
         }
@@ -1763,14 +1763,14 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
             }
         }
 
-        printf("Proc %d in grid_C gets Y after 1st solve.\n", grid_C->iam);
-        for (i = 0; i < ldv2; ++i) {
-            for (j = 0; j < r2; ++j) {
-                printf("%f ", localY[j*ldv2+i]);
-            }
-            printf("\n");
-        }
-        fflush(stdout);
+        // printf("Proc %d in grid_C gets Y after 1st solve.\n", grid_C->iam);
+        // for (i = 0; i < ldv2; ++i) {
+        //     for (j = 0; j < r2; ++j) {
+        //         printf("%f ", localY[j*ldv2+i]);
+        //     }
+        //     printf("\n");
+        // }
+        // fflush(stdout);
         MPI_Barrier(grid_C->comm);
     }
 
