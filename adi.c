@@ -1565,10 +1565,10 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
             ABORT("Malloc fails for rhs_B[].");
         if ( !(iterW = doubleMalloc_dist(ldu2*m_B*r2)) )
             ABORT("Malloc fails for iterW[].");
-    }
-    if (iam_A == 0) {
         if ( !(iterW_comb = doubleMalloc_dist(m_A*m_B*r2)) )
             ABORT("Malloc fails for iterW_comb[].");
+    }
+    if (iam_A == 0) {
         if ( !(iterW_comb_tmp = doubleMalloc_dist(m_A*m_B*r2)) )
             ABORT("Malloc fails for iterW_comb_tmp[].");
     }
@@ -2021,9 +2021,9 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
         SUPERLU_FREE(iterZ);
         SUPERLU_FREE(rhs_B);
         SUPERLU_FREE(iterW);
+        SUPERLU_FREE(iterW_comb);
 
         if (iam_A == 0) {
-            SUPERLU_FREE(iterW_comb);
             SUPERLU_FREE(iterW_comb_tmp);
             SUPERLU_FREE(global_T1);
         }

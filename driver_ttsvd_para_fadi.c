@@ -361,9 +361,9 @@ int main(int argc, char *argv[])
     m_A = ms[0]; m_B = ms[1]; m_C = ms[2];
     r1 = rs[0]; r2 = rs[1];
 
-    printf("Process with id in grid_A %d, id in grid_B %d, and id in grid_C %d gets problem size %d, %d, %d, and rhs rank %d, %d.\n", 
-        grid_A.iam, grid_B.iam, grid_C.iam, ms[0], ms[1], ms[2], rs[0], rs[1]);
-    fflush(stdout);
+    // printf("Process with id in grid_A %d, id in grid_B %d, and id in grid_C %d gets problem size %d, %d, %d, and rhs rank %d, %d.\n", 
+    //     grid_A.iam, grid_B.iam, grid_C.iam, ms[0], ms[1], ms[2], rs[0], rs[1]);
+    // fflush(stdout);
 
     if ((iam_A != -1) || (iam_B != -1) || (iam_C != -1)) {
         dread_shift_multigrids(fp_shift1, &pp1, &qq1, &ll1, grids, grid_proc, 3);
