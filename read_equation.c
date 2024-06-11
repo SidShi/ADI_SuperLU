@@ -446,12 +446,12 @@ void dread_shift_interval_twogrids(FILE *fp, double *a, double *b, double *c, do
     double abcd[4], r_abcd[4];
     if (grid_A->iam == 0) {
         fscanf(fp, "%lf%lf%lf%lf\n", a, b, c, d);
-        abcd[0] = a; abcd[1] = b; abcd[2] = c; abcd[3] = d;
+        abcd[0] = *a; abcd[1] = *b; abcd[2] = *c; abcd[3] = *d;
     }
     transfer_X_dgrids(abcd, 4, 1, r_abcd, grid_proc, grA, grB);
 
     if (grid_B->iam == 0) {
-        a = r_abcd[0]; b = r_abcd[1]; c = r_abcd[2]; d = r_abcd[3];
+        *a = r_abcd[0]; *b = r_abcd[1]; *c = r_abcd[2]; *d = r_abcd[3];
     }
 }
 
