@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
     int p; /* The following variables are used for batch solves */
     int_t i, j;
     double *pp1, *qq1;
-    double *U1, *U2, *U2T *V2, *trueX_global, *U1_global, *U2_global, *V2_global, *trueF_global;
+    double *U1, *U2, *U2T, *V2, *trueX_global, *U1_global, *U2_global, *V2_global, *trueF_global;
     double tol = 1.0/(1e10);
     double la, ua, lb, ub;
     int_t ll1;
