@@ -1849,10 +1849,16 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
                     }
                 }
 
+                printf("Proc %d in B finishes solving for iteration %d.\n", iam_B, k);
+                fflush(stdout);
+
                 MPI_Barrier(grid_B->comm);
             }
 
             if (iam_A != -1) {
+                printf("Proc %d in A finishes solving for iteration %d.\n", iam_A, k);
+                fflush(stdout);
+
                 MPI_Barrier(grid_A->comm);
             }
         }
@@ -1885,6 +1891,9 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
                 }
             }
 
+            printf("Proc %d in C finishes solving for iteration %d.\n", iam_C, k);
+            fflush(stdout);
+
             MPI_Barrier(grid_C->comm);
         }
 
@@ -1901,6 +1910,9 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
         }
         if (iam_A != -1) {
             MPI_Bcast(&rr2, 1, MPI_INT, 0, grid_A->comm);
+
+            printf("Proc %d in A finishes recompressing for iteration %d.\n", iam_A, k);
+            fflush(stdout);
 
             MPI_Barrier(grid_A->comm);
         }
@@ -1920,6 +1932,9 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
                 SUPERLU_FREE(compressS);
             }
 
+            printf("Proc %d in B finishes recompressing for iteration %d.\n", iam_B, k);
+            fflush(stdout);
+
             MPI_Barrier(grid_B->comm);
         }
         if (iam_C != -1) {
@@ -1929,6 +1944,9 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
                 }
             }
             SUPERLU_FREE(compressV);
+
+            printf("Proc %d in C finishes recompressing for iteration %d.\n", iam_C, k);
+            fflush(stdout);
 
             MPI_Barrier(grid_C->comm);
         }
@@ -1945,6 +1963,9 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
     // }
     // fflush(stdout);
     // MPI_Barrier(grid_A->comm);
+
+    printf("Proc %d finishes all adi iterations.\n", global_rank);
+    fflush(stdout);
 
     if (iam_A != -1) {
         dCPQR_dist_getQ(localZ, ldu1, T1, r1*l, rank1, grid_A, tol);
