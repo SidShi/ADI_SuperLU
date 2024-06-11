@@ -1533,16 +1533,16 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
     double *global_T1;
     double *nzval_B_neg, *nzval_C_neg;
     int_t  *rowind_B_neg, *colptr_B_neg, *rowind_C_neg, *colptr_C_neg;
-    int rr1, rr2;
+    int rr2, tmpr2;
     double one = 1.0, zero = 0.0;
     char     transpose[1];
     *transpose = 'N';
     double *rhs_A, *rhs_B, *rhs_BT, *rhs_C;
-    double *localZ, *iterW_comb, *iterW_comb_tmp, *localW_comb, *localW, *localW_T, *localD, *localY, *finalD;
-    double *iterZ, *iterW_comb, *iterW, *iterW_T, *iterY;
-    double *global_T1, *global_T1_onB, *local_T2;
+    double *localZ, *localW_T, *localD, *localY;
+    double *iterZ, *iterW_comb, *iterW_comb_tmp, *iterW, *iterW_T, *iterY;
+    double *global_T1, *global_T1_onB;
     int info;
-    int_t i, j, k;
+    int_t i, j, k, l;
     double *berr_A, *berr_C;
     SuperLUStat_t stat_A, stat_C;
     dScalePermstruct_t ScalePermstruct_A, ScalePermstruct_C;
@@ -1564,35 +1564,23 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
             ABORT("Malloc fails for iterZ[].");
         if ( !(rhs_B = doubleMalloc_dist(ldu2*m_B*r2)) )
             ABORT("Malloc fails for rhs_B[].");
-        if ( !(localW = doubleMalloc_dist(ldu2*r2*l)) )
-            ABORT("Malloc fails for localW[].");
-        if ( !(iterW = doubleMalloc_dist(ldu2*r2)) )
+        if ( !(iterW = doubleMalloc_dist(ldu2*m_B*r2)) )
             ABORT("Malloc fails for iterW[].");
     }
-    if (grid_A->iam == 0) {
-        if ( !(localW_comb = doubleMalloc_dist(m_A*m_B*r2*l)) )
-            ABORT("Malloc fails for localW_comb[].");
+    if (iam_A == 0) {
         if ( !(iterW_comb = doubleMalloc_dist(m_A*m_B*r2)) )
             ABORT("Malloc fails for iterW_comb[].");
         if ( !(iterW_comb_tmp = doubleMalloc_dist(m_A*m_B*r2)) )
             ABORT("Malloc fails for iterW_comb_tmp[].");
-        if ( !(localD = doubleMalloc_dist(r2*l)) )
-            ABORT("Malloc fails for localD[].");
-        if ( !(global_T1 = doubleMalloc_dist(m_A*r1*l)) )
-            ABORT("Malloc fails for global_T1[].");
     }
 
-    if (grid_B->iam != -1) {
+    if (iam_B != -1) {
         if ( !(rhs_BT = doubleMalloc_dist(ldu2t*m_A*r2)) )
             ABORT("Malloc fails for rhs_BT[].");
-        if ( !(localW_T = doubleMalloc_dist(ldu2t*r2*l)) )
+        if ( !(localW_T = doubleMalloc_dist(ldu2t*m_A*r2*l)) )
             ABORT("Malloc fails for localW_T[].");
-        if ( !(iterW_T = doubleMalloc_dist(ldu2t*r2)) )
+        if ( !(iterW_T = doubleMalloc_dist(ldu2t*m_A*r2)) )
             ABORT("Malloc fails for iterW_T[].");
-        if ( !(global_T1_onB = doubleMalloc_dist(m_A*r1*l)) )
-            ABORT("Malloc fails for global_T1_onB[].");
-        if ( !(local_T2 = doubleMalloc_dist(r1*l*ldu2*r2*l)) )
-            ABORT("Malloc fails for global_T1[].");
 
         dallocateA_dist(m_B, nnz_B, &nzval_B_neg, &rowind_B_neg, &colptr_B_neg);
         for (i = 0; i < m_B; ++i) {
@@ -1604,8 +1592,12 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
         }
         colptr_B_neg[m_B] = colptr_B[m_B];
     }
+    if (iam_B == 0) {
+        if ( !(localD = doubleMalloc_dist(r2*l)) )
+            ABORT("Malloc fails for localD[].");
+    }
 
-    if (grid_C->iam != -1) {
+    if (iam_C != -1) {
         if ( !(berr_C = doubleMalloc_dist(r2)) )
             ABORT("Malloc fails for berr_C[].");
         if ( !(rhs_C = doubleMalloc_dist(ldv2*r2)) )
@@ -1674,26 +1666,29 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
         adi_ls2(&options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, m_B, nnz_B, nzval_B_neg, rowind_B_neg, colptr_B_neg,
             grid_A, grid_B, rhs_B, ldu2, rhs_BT, ldu2t, r2, q[0], la, ua, lb, ub, iterW_comb, grid_proc, 0, 1);
 
-        if (iam_A == 0) {
-            for (j = 0; j < r2; ++j) {
-                for (i = 0; i < m_A*m_B; ++i) {
-                    localW_comb[j*m_A*m_B+i] = iterW_comb[j*m_A*m_B+i];
+        dredistribute_X_twogrids(iterW_comb, iterW, iterW_T, grid_A, grid_B, m_A, m_B, r2, grid_proc, 0, 1);
+
+        if (iam_B != -1) {
+            for (k = 0; k < r2; ++k) {
+                for (j = 0; j < ldu2t; ++j) {
+                    for (i = 0; i < m_A; ++i) {
+                        localW_T[k*ldu2t*m_A+j*m_A+i] = iterW_T[k*ldu2t*m_A+i*ldu2t+j];
+                    }
                 }
             }
+
+            if (iam_B == 0) {
+                for (j = 0; j < r2; ++j) {
+                    localD[j] = q[0]-p[0];
+                }
+            }
+
+            MPI_Barrier(grid_B->comm);
         }
 
-        dredistribute_X_twogrids(iterW_comb, iterW, iterW_T, grid_A, grid_B, m_A, m_B, r2, grid_proc, 0, 1);
-    }
-    if (iam_A == 0) {
-        for (j = 0; j < r2; ++j) {
-            localD[j] = q[0] - p[0];
+        if (iam_A != -1) {
+            MPI_Barrier(grid_A->comm);
         }
-    }
-    if (iam_A != -1) {
-        MPI_Barrier(grid_A->comm);
-    }
-    if (iam_B != -1) {
-        MPI_Barrier(grid_B->comm);
     }
 
     if (iam_C != -1) {
@@ -1727,7 +1722,6 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
         MPI_Barrier(grid_C->comm);
     }
 
-    rr1 = r1;
     rr2 = r2;
     for (k = 1; k < l; ++k) {
         if (iam_A != -1) {
@@ -1783,14 +1777,112 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
                 for (j = 0; j < r2; ++j) {
                     for (i = 0; i < m_A*m_B; ++i) {
                         iterW_comb[j*m_A*m_B+i] += iterW_comb_tmp[j*m_A*m_B+i];
-                        localW_comb[rr2*m_A*m_B+j*m_A*m_B+i] = iterW_comb[j*m_A*m_B+i];
                     }
                 }
             }
-
             dredistribute_X_twogrids(iterW_comb, iterW, iterW_T, grid_A, grid_B, m_A, m_B, r2, grid_proc, 0, 1);
+
+            if (iam_B != -1) {
+                for (l = 0; l < r2; ++l) {
+                    for (j = 0; j < ldu2t; ++j) {
+                        for (i = 0; i < m_A; ++i) {
+                            localW_T[(rr2+l)*ldu2t*m_A+j*m_A+i] = iterW_T[l*ldu2t*m_A+i*ldu2t+j];
+                        }
+                    }
+                }
+
+                if (iam_B == 0) {
+                    for (j = 0; j < r2; ++j) {
+                        localD[rr2+j] = q[k]-p[k];
+                    }
+                }
+
+                MPI_Barrier(grid_B->comm);
+            }
+
+            if (iam_A != -1) {
+                MPI_Barrier(grid_A->comm);
+            }
+        }
+
+        if (iam_C != -1) {
+            dcreate_SuperMatrix(&C, grid_C, m_C, m_C, nnz_C, nzval_C_neg, rowind_C_neg, colptr_C_neg, p[k]);
+
+            for (j = 0; j < r2; ++j) {
+                for (i = 0; i < ldv2; ++i) {
+                    rhs_C[j*ldv2+i] = (p[k]-q[k-1])*iterY[j*ldv2+i];
+                }
+            }
+
+            dScalePermstructInit(m_C, m_C, &ScalePermstruct_C);
+            dLUstructInit(m_C, &LUstruct_C);
+            PStatInit(&stat_C);
+            pdgssvx(&options, &C, &ScalePermstruct_C, rhs_C, ldv2, r2, grid_C,
+                &LUstruct_C, &SOLVEstruct_C, berr_C, &stat_C, &info);
+
+            Destroy_CompRowLoc_Matrix_dist(&C);
+            dScalePermstructFree(&ScalePermstruct_C);
+            dDestroy_LU(m_C, grid_C, &LUstruct_C);
+            dLUstructFree(&LUstruct_C);
+            dSolveFinalize(&options, &SOLVEstruct_C);
+
+            for (j = 0; j < r2; ++j) {
+                for (i = 0; i < ldv2; ++i) {
+                    iterY[j*ldv2+i] += rhs_C[j*ldv2+i];
+                    localY[rr2*ldv2+j*ldv2+i] = iterY[j*ldv2+i];
+                }
+            }
+
+            MPI_Barrier(grid_C->comm);
+        }
+
+        rr2 += r2;
+        double *compressU, *compressS, *compressV;
+        drecompression_dist_twogrids(localW_T, m_A*ldu2t, m_A*m_B, &compressU, localD, &compressS, grid_B,
+            localY, ldv2, m_C, &compressV, grid_C, &rr2, tol, grid_proc, 1, 2);
+        
+        if (iam_B == 0) {
+            MPI_Send(&rr2, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+        }
+        else if (iam_A == 0) {
+            MPI_Recv(&rr2, 1, MPI_INT, grid_proc[0], 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+        if (iam_A != -1) {
+            MPI_Bcast(&rr2, 1, MPI_INT, 0, grid_A->comm);
+
+            MPI_Barrier(grid_A->comm);
+        }
+
+        if (iam_B != -1) {
+            for (j = 0; j < rr2; ++j) {
+                for (i = 0; i < m_A*ldu2t; ++i) {
+                    localW_T[j*m_A*ldu2t+i] = compressU[j*ldu2t*m_A+i];
+                }
+            }
+            SUPERLU_FREE(compressU);
+
+            if (iam_B == 0) {
+                for (j = 0; j < rr2; ++j) {
+                    localD[j] = compressS[j];
+                }
+                SUPERLU_FREE(compressS);
+            }
+
+            MPI_Barrier(grid_B->comm);
+        }
+        if (iam_C != -1) {
+            for (j = 0; j < rr2; ++j) {
+                for (i = 0; i < ldv2; ++i) {
+                    localY[j*ldv2+i] = compressV[j*ldv2+i];
+                }
+            }
+            SUPERLU_FREE(compressV);
+
+            MPI_Barrier(grid_C->comm);
         }
     }
+
+    *rank2 = rr2;
 
     // printf("Proc %d in grid_A gets T1 before truncation.\n", grid_A->iam);
     // for (i = 0; i < ldu; ++i) {
@@ -1802,7 +1894,63 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
     // fflush(stdout);
     // MPI_Barrier(grid_A->comm);
 
-    dCPQR_dist_getQ(localZ, ldu, Z, r*l, rank, grid_A, tol);
+    if (iam_A != -1) {
+        dCPQR_dist_getQ(localZ, ldu1, T1, r1*l, rank1, grid_A, tol);
+
+        if (iam_A == 0) {
+            if ( !(global_T1 = doubleMalloc_dist(m_A*(*rank1))) )
+                ABORT("Malloc fails for global_T1[].");
+        }
+        dgather_X(*T1, ldu1, global_T1, m_A, *rank1, grid_A);
+
+        MPI_Barrier(grid_A->comm);
+    }
+    
+    if (iam_A == 0) {
+        MPI_Send(rank1, 1, MPI_INT, grid_proc[0], 0, MPI_COMM_WORLD);
+    }
+    else if (iam_B == 0) {
+        MPI_Recv(rank1, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+    if (iam_B != -1) {
+        MPI_Bcast(rank1, 1, MPI_INT, 0, grid_B->comm);
+
+        if ( !(global_T1_onB = doubleMalloc_dist(m_A*(*rank1))) )
+            ABORT("Malloc fails for global_T1_onB[].");
+    }
+    transfer_X_dgrids(global_T1, m_A, *rank1, global_T1_onB, grid_proc, 0, 1);
+    if (iam_B != -1) {
+        MPI_Bcast(global_T1_onB, m_A*(*rank1), MPI_DOUBLE, 0, grid_B->comm);
+
+        MPI_Bcast(localD, rr2, MPI_DOUBLE, 0, grid_B->comm);
+        for (j = 0; j < rr2; ++j) {
+            for (i = 0; i < m_A*ldu2t; ++i) {
+                localW_T[j*m_A*ldu2t+i] *= localD[j];
+            }
+        }
+
+        tmpr2 = ldu2t*rr2;
+        if ( !(*T2 = doubleMalloc_dist((*rank1)*tmpr2)) )
+            ABORT("Malloc fails for *T2[].");
+        dgemm_("T", "N", rank1, &(tmpr2), &(m_A), &one, global_T1_onB, &(m_A), 
+            localW_T, &(m_A), &zero, *T2, rank1);
+    }
+
+    if (iam_A == 0) {
+        MPI_Send(rank1, 1, MPI_INT, grid_proc[0]+grid_proc[1], 0, MPI_COMM_WORLD);
+    }
+    else if (iam_C == 0) {
+        MPI_Recv(rank1, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+    if (iam_C != -1) {
+        if ( !(*T3 = doubleMalloc_dist(ldv2*rr2)) )
+            ABORT("Malloc fails for *T3[].");
+        for (j = 0; j < ldv2; ++j) {
+            for (i = 0; i < rr2; ++i) {
+                (*T3)[j*rr2+i] = localY[i*ldv2+j];
+            }
+        }
+    }
 
     // printf("Proc %d in grid_A gets T1 after truncation.\n", grid_A->iam);
     // for (i = 0; i < ldu; ++i) {
@@ -1812,11 +1960,37 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
     //     printf("\n");
     // }
     // fflush(stdout);
-    MPI_Barrier(grid_A->comm);
+    
+    if (iam_A != -1) {
+        PStatFree(&stat_A);
+        SUPERLU_FREE(berr_A);
+        SUPERLU_FREE(rhs_A);
+        SUPERLU_FREE(localZ);
+        SUPERLU_FREE(iterZ);
+        SUPERLU_FREE(rhs_B);
+        SUPERLU_FREE(iterW);
 
-    PStatFree(&stat_A);
-    SUPERLU_FREE(berr_A);
-    SUPERLU_FREE(rhs_A);
-    SUPERLU_FREE(localZ);
-    SUPERLU_FREE(iterZ);
+        if (iam_A == 0) {
+            SUPERLU_FREE(iterW_comb);
+            SUPERLU_FREE(iterW_comb_tmp);
+            SUPERLU_FREE(global_T1);
+        }
+    }
+    if (iam_B != -1) {
+        SUPERLU_FREE(iterW_T);
+        SUPERLU_FREE(rhs_BT)
+        SUPERLU_FREE(localW_T);
+        SUPERLU_FREE(global_T1_onB);
+
+        if (iam_B == 0) {
+            SUPERLU_FREE(localD);
+        }
+    }
+    if (iam_C != -1) {
+        PStatFree(&stat_C);
+        SUPERLU_FREE(berr_C);
+        SUPERLU_FREE(rhs_C);
+        SUPERLU_FREE(localY);
+        SUPERLU_FREE(iterY);
+    }
 }

@@ -3321,7 +3321,7 @@ void dTT_right_orthonormalization(double **TTcores, gridinfo_t **grids, int *ms,
                 }
             }
 
-            dQR_dist(localX, locals[l], &localQ, &R, aug_rs[l], grids[l]);
+            dQR_dist(localX, locals[l]*aug_rs[l+1], &localQ, &R, aug_rs[l], grids[l]);
             for (j = 0; j < locals[l]*aug_rs[l+1]; ++j) {
                 for (i = 0; i < aug_rs[l]; ++i) {
                     TTcores[l][j*aug_rs[l]+i] = localQ[i*locals[l]*aug_rs[l+1]+j];
