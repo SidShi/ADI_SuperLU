@@ -1530,7 +1530,6 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
     double **T1, double **T2, double **T3, int r1, int r2, int *rank1, int *rank2, int *grid_proc)
 {
     SuperMatrix A, C;
-    double *global_T1;
     double *nzval_B_neg, *nzval_C_neg;
     int_t  *rowind_B_neg, *colptr_B_neg, *rowind_C_neg, *colptr_C_neg;
     int rr2, tmpr2;
@@ -1542,7 +1541,7 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
     double *iterZ, *iterW_comb, *iterW_comb_tmp, *iterW, *iterW_T, *iterY;
     double *global_T1, *global_T1_onB;
     int info;
-    int_t i, j, k, l;
+    int_t i, j, k, m;
     double *berr_A, *berr_C;
     SuperLUStat_t stat_A, stat_C;
     dScalePermstruct_t ScalePermstruct_A, ScalePermstruct_C;
@@ -1663,7 +1662,7 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
                 }
             }
         }
-        adi_ls2(&options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, m_B, nnz_B, nzval_B_neg, rowind_B_neg, colptr_B_neg,
+        adi_ls2(options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, m_B, nnz_B, nzval_B_neg, rowind_B_neg, colptr_B_neg,
             grid_A, grid_B, rhs_B, ldu2, rhs_BT, ldu2t, r2, q[0], la, ua, lb, ub, iterW_comb, grid_proc, 0, 1);
 
         dredistribute_X_twogrids(iterW_comb, iterW, iterW_T, grid_A, grid_B, m_A, m_B, r2, grid_proc, 0, 1);
@@ -1770,7 +1769,7 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
                     }
                 }
             }
-            adi_ls2(&options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, m_B, nnz_B, nzval_B_neg, rowind_B_neg, colptr_B_neg,
+            adi_ls2(options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, m_B, nnz_B, nzval_B_neg, rowind_B_neg, colptr_B_neg,
                 grid_A, grid_B, rhs_B, ldu2, rhs_BT, ldu2t, r2, q[k], la, ua, lb, ub, iterW_comb_tmp, grid_proc, 0, 1);
 
             if (iam_A == 0) {
@@ -1783,10 +1782,10 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
             dredistribute_X_twogrids(iterW_comb, iterW, iterW_T, grid_A, grid_B, m_A, m_B, r2, grid_proc, 0, 1);
 
             if (iam_B != -1) {
-                for (l = 0; l < r2; ++l) {
+                for (m = 0; m < r2; ++m) {
                     for (j = 0; j < ldu2t; ++j) {
                         for (i = 0; i < m_A; ++i) {
-                            localW_T[(rr2+l)*ldu2t*m_A+j*m_A+i] = iterW_T[l*ldu2t*m_A+i*ldu2t+j];
+                            localW_T[(rr2+m)*ldu2t*m_A+j*m_A+i] = iterW_T[m*ldu2t*m_A+i*ldu2t+j];
                         }
                     }
                 }
@@ -1978,7 +1977,7 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
     }
     if (iam_B != -1) {
         SUPERLU_FREE(iterW_T);
-        SUPERLU_FREE(rhs_BT)
+        SUPERLU_FREE(rhs_BT);
         SUPERLU_FREE(localW_T);
         SUPERLU_FREE(global_T1_onB);
 
