@@ -1849,15 +1849,15 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
                     }
                 }
 
-                printf("Proc %d in B finishes solving for iteration %d.\n", iam_B, k);
-                fflush(stdout);
+                // printf("Proc %d in B finishes solving for iteration %d.\n", iam_B, k);
+                // fflush(stdout);
 
                 MPI_Barrier(grid_B->comm);
             }
 
             if (iam_A != -1) {
-                printf("Proc %d in A finishes solving for iteration %d.\n", iam_A, k);
-                fflush(stdout);
+                // printf("Proc %d in A finishes solving for iteration %d.\n", iam_A, k);
+                // fflush(stdout);
 
                 MPI_Barrier(grid_A->comm);
             }
@@ -1891,8 +1891,8 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
                 }
             }
 
-            printf("Proc %d in C finishes solving for iteration %d.\n", iam_C, k);
-            fflush(stdout);
+            // printf("Proc %d in C finishes solving for iteration %d.\n", iam_C, k);
+            // fflush(stdout);
 
             MPI_Barrier(grid_C->comm);
         }
@@ -1911,8 +1911,8 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
         if (iam_A != -1) {
             MPI_Bcast(&rr2, 1, MPI_INT, 0, grid_A->comm);
 
-            printf("Proc %d in A finishes recompressing for iteration %d.\n", iam_A, k);
-            fflush(stdout);
+            // printf("Proc %d in A finishes recompressing for iteration %d.\n", iam_A, k);
+            // fflush(stdout);
 
             MPI_Barrier(grid_A->comm);
         }
@@ -1932,8 +1932,8 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
                 SUPERLU_FREE(compressS);
             }
 
-            printf("Proc %d in B finishes recompressing for iteration %d.\n", iam_B, k);
-            fflush(stdout);
+            // printf("Proc %d in B finishes recompressing for iteration %d.\n", iam_B, k);
+            // fflush(stdout);
 
             MPI_Barrier(grid_B->comm);
         }
@@ -1945,8 +1945,8 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
             }
             SUPERLU_FREE(compressV);
 
-            printf("Proc %d in C finishes recompressing for iteration %d.\n", iam_C, k);
-            fflush(stdout);
+            // printf("Proc %d in C finishes recompressing for iteration %d.\n", iam_C, k);
+            // fflush(stdout);
 
             MPI_Barrier(grid_C->comm);
         }
@@ -1964,11 +1964,20 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
     // fflush(stdout);
     // MPI_Barrier(grid_A->comm);
 
-    printf("Proc %d finishes all adi iterations.\n", global_rank);
+    printf("Proc %d finishes all adi iterations, knowing rank2 %d.\n", global_rank, rr2);
     fflush(stdout);
 
     if (iam_A != -1) {
         dCPQR_dist_getQ(localZ, ldu1, T1, r1*l, rank1, grid_A, tol);
+
+        printf("Proc %d in grid_A gets T1.\n", grid_A->iam);
+        for (i = 0; i < ldu1; ++i) {
+            for (j = 0; j < *rank1; ++j) {
+                printf("%f ", (*T1)[j*ldu1+i]);
+            }
+            printf("\n");
+        }
+        fflush(stdout);
 
         if (iam_A == 0) {
             if ( !(global_T1 = doubleMalloc_dist(m_A*(*rank1))) )
@@ -2007,6 +2016,15 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
             ABORT("Malloc fails for *T2[].");
         dgemm_("T", "N", rank1, &(tmpr2), &(m_A), &one, global_T1_onB, &(m_A), 
             localW_T, &(m_A), &zero, *T2, rank1);
+
+        printf("Proc %d in grid_B gets T2.\n", grid_B->iam);
+        for (i = 0; i < ldu2t*(*rank1); ++i) {
+            for (j = 0; j < rr2; ++j) {
+                printf("%f ", (*T2)[j*ldu2t*(*rank1)+i]);
+            }
+            printf("\n");
+        }
+        fflush(stdout);
     }
 
     if (iam_A == 0) {
@@ -2023,6 +2041,15 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
                 (*T3)[j*rr2+i] = localY[i*ldv2+j];
             }
         }
+
+        printf("Proc %d in grid_C gets T3.\n", grid_C->iam);
+        for (i = 0; i < rr2; ++i) {
+            for (j = 0; j < ldv2; ++j) {
+                printf("%f ", (*T3)[j*rr2+i]);
+            }
+            printf("\n");
+        }
+        fflush(stdout);
     }
 
     // printf("Proc %d in grid_A gets T1 after truncation.\n", grid_A->iam);
