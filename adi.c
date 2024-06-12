@@ -1962,20 +1962,20 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
     // fflush(stdout);
     // MPI_Barrier(grid_A->comm);
 
-    printf("Proc %d finishes all adi iterations, knowing rank2 %d.\n", global_rank, rr2);
-    fflush(stdout);
+    // printf("Proc %d finishes all adi iterations, knowing rank2 %d.\n", global_rank, rr2);
+    // fflush(stdout);
 
     if (iam_A != -1) {
         dCPQR_dist_getQ(localZ, ldu1, T1, r1*l, rank1, grid_A, tol);
 
-        printf("Proc %d in grid_A gets T1.\n", grid_A->iam);
-        for (i = 0; i < ldu1; ++i) {
-            for (j = 0; j < *rank1; ++j) {
-                printf("%f ", (*T1)[j*ldu1+i]);
-            }
-            printf("\n");
-        }
-        fflush(stdout);
+        // printf("Proc %d in grid_A gets T1.\n", grid_A->iam);
+        // for (i = 0; i < ldu1; ++i) {
+        //     for (j = 0; j < *rank1; ++j) {
+        //         printf("%f ", (*T1)[j*ldu1+i]);
+        //     }
+        //     printf("\n");
+        // }
+        // fflush(stdout);
 
         if (iam_A == 0) {
             if ( !(global_T1 = doubleMalloc_dist(m_A*(*rank1))) )
@@ -2015,14 +2015,14 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
         dgemm_("T", "N", rank1, &(tmpr2), &(m_A), &one, global_T1_onB, &(m_A), 
             localW_T, &(m_A), &zero, *T2, rank1);
 
-        printf("Proc %d in grid_B gets T2.\n", grid_B->iam);
-        for (i = 0; i < ldu2t*(*rank1); ++i) {
-            for (j = 0; j < rr2; ++j) {
-                printf("%f ", (*T2)[j*ldu2t*(*rank1)+i]);
-            }
-            printf("\n");
-        }
-        fflush(stdout);
+        // printf("Proc %d in grid_B gets T2.\n", grid_B->iam);
+        // for (i = 0; i < ldu2t*(*rank1); ++i) {
+        //     for (j = 0; j < rr2; ++j) {
+        //         printf("%f ", (*T2)[j*ldu2t*(*rank1)+i]);
+        //     }
+        //     printf("\n");
+        // }
+        // fflush(stdout);
     }
 
     if (iam_A == 0) {
@@ -2040,14 +2040,14 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
             }
         }
 
-        printf("Proc %d in grid_C gets T3.\n", grid_C->iam);
-        for (i = 0; i < rr2; ++i) {
-            for (j = 0; j < ldv2; ++j) {
-                printf("%f ", (*T3)[j*rr2+i]);
-            }
-            printf("\n");
-        }
-        fflush(stdout);
+        // printf("Proc %d in grid_C gets T3.\n", grid_C->iam);
+        // for (i = 0; i < rr2; ++i) {
+        //     for (j = 0; j < ldv2; ++j) {
+        //         printf("%f ", (*T3)[j*rr2+i]);
+        //     }
+        //     printf("\n");
+        // }
+        // fflush(stdout);
     }
 
     // printf("Proc %d in grid_A gets T1 after truncation.\n", grid_A->iam);
