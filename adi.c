@@ -1580,6 +1580,8 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
             ABORT("Malloc fails for localW_T[].");
         if ( !(iterW_T = doubleMalloc_dist(ldu2t*m_A*r2)) )
             ABORT("Malloc fails for iterW_T[].");
+        if ( !(localD = doubleMalloc_dist(r2*l)) )
+            ABORT("Malloc fails for localD[].");
 
         dallocateA_dist(m_B, nnz_B, &nzval_B_neg, &rowind_B_neg, &colptr_B_neg);
         for (i = 0; i < m_B; ++i) {
@@ -1590,10 +1592,6 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
             colptr_B_neg[i] = colptr_B[i];
         }
         colptr_B_neg[m_B] = colptr_B[m_B];
-    }
-    if (iam_B == 0) {
-        if ( !(localD = doubleMalloc_dist(r2*l)) )
-            ABORT("Malloc fails for localD[].");
     }
 
     if (iam_C != -1) {
@@ -2081,10 +2079,7 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
         SUPERLU_FREE(rhs_BT);
         SUPERLU_FREE(localW_T);
         SUPERLU_FREE(global_T1_onB);
-
-        if (iam_B == 0) {
-            SUPERLU_FREE(localD);
-        }
+        SUPERLU_FREE(localD);
     }
     if (iam_C != -1) {
         PStatFree(&stat_C);
