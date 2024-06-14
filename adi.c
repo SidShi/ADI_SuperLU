@@ -1618,12 +1618,12 @@ void fadi_ttsvd_3d_2grids(superlu_dist_options_t options, int_t m_A, int_t nnz_A
     if (grid1->iam != -1) {
         fadi_col(options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, grid1, U1, ldu1, p1, q1, l1, tol, T1, r1, &rr1);
 
+        if ( !(global_T1 = doubleMalloc_dist(m_A*rr1)) )
+            ABORT("Malloc fails for global_T1[].");
+
         if (grid1->iam == 0) {
             printf("Grid 1 finishes fadi_col!\n");
             fflush(stdout);
-
-            if ( !(global_T1 = doubleMalloc_dist(m_A*rr1)) )
-                ABORT("Malloc fails for global_T1[].");
 
             if ( !(tmpA = doubleMalloc_dist(m_A*rr1)) )
                 ABORT("Malloc fails for tmpA[].");
@@ -1631,6 +1631,8 @@ void fadi_ttsvd_3d_2grids(superlu_dist_options_t options, int_t m_A, int_t nnz_A
                 ABORT("Malloc fails for newA[].");
         }
         dgather_X(*T1, ldu1, global_T1, m_A, rr1, grid1);
+        MPI_Bcast(global_T1, m_A*rr1, MPI_DOUBLE, 0, grid1->comm);
+
         if (grid1->iam == 0) {
             /* Create compressed column matrix for GA. */
             dCreate_CompCol_Matrix_dist(&GA, m_A, m_A, nnz_A, nzval_A, rowind_A, colptr_A,
@@ -1705,12 +1707,12 @@ void fadi_ttsvd_3d_2grids(superlu_dist_options_t options, int_t m_A, int_t nnz_A
     }
     
     if (grid1->iam == 0) {
-        SUPERLU_FREE(global_T1);
         SUPERLU_FREE(tmpA);
         SUPERLU_FREE(newA);
     }
     if (grid1->iam != -1) {
         SUPERLU_FREE(newU2);
+        SUPERLU_FREE(global_T1);
     }
 }
 
