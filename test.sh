@@ -88,7 +88,9 @@ fi
 ### fADI TTSVD 3D test
 # srun -n 3 ./fadi_ttsvd_3d -r 1 -c 1 -w 1 -v 1 -m 1 -n 1 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_3D_test_small/
 # srun -n 12 ./fadi_ttsvd_3d -r 2 -c 2 -w 2 -v 2 -m 2 -n 2 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_3D_test/
+srun -n 2 ./fadi_ttsvd_3d_2grids -r 1 -c 1 -w 1 -v 1 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_3D_test_small/
+# srun -n 8 ./fadi_ttsvd_3d_2grids -r 2 -c 2 -w 2 -v 2 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_3D_test/
 
 ### fADI parallel TTSVD 3D test
 # srun -n 3 ./fadi_para_ttsvd_3d -r 1 -c 1 -w 1 -v 1 -m 1 -n 1 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_para_TTSVD_3D_test_small/
-srun -n 12 ./fadi_para_ttsvd_3d -r 2 -c 2 -w 2 -v 2 -m 2 -n 2 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_para_TTSVD_3D_test/
+# srun -n 12 ./fadi_para_ttsvd_3d -r 2 -c 2 -w 2 -v 2 -m 2 -n 2 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_para_TTSVD_3D_test/

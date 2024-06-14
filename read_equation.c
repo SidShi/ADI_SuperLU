@@ -382,6 +382,9 @@ void dread_shift_multigrids(FILE *fp, double **p, double **q, int_t *l, gridinfo
 
             MPI_Bcast(*p, l1, MPI_DOUBLE, 0, grids[j]->comm);
             MPI_Bcast(*q, l1, MPI_DOUBLE, 0, grids[j]->comm);
+
+            SUPERLU_FREE(rp);
+            SUPERLU_FREE(rq);
         }
         else if (grids[j]->iam != -1) {
             MPI_Bcast(&l1, 1, MPI_INT, 0, grids[j]->comm);
@@ -452,6 +455,52 @@ void dread_shift_interval_twogrids(FILE *fp, double *a, double *b, double *c, do
 
     if (grid_B->iam == 0) {
         *a = r_abcd[0]; *b = r_abcd[1]; *c = r_abcd[2]; *d = r_abcd[3];
+    }
+}
+
+void dread_shift_interval_multigrids(FILE *fp, int d, double *la, double *ua, double *lb, double *ub, gridinfo_t **grids, int *grid_proc)
+{
+    int_t i;
+    double *rla, *rua, *rlb, *rub;
+
+    if (grids[0]->iam == 0) {
+        for (i = 0; i < d-2; ++i) {
+            fscanf(fp, "%lf%lf%lf%lf\n", &(la[i]), &(ua[i]), &(lb[i]), &(ub[i]));
+        }
+    }
+
+    for (j = 1; j < d; ++j) {
+        if (grids[j]->iam == 0) {
+            rla = (double *) doubleMalloc_dist(d-2);
+            rua = (double *) doubleMalloc_dist(d-2);
+            rlb = (double *) doubleMalloc_dist(d-2);
+            rub = (double *) doubleMalloc_dist(d-2);
+        }
+        transfer_X_dgrids(la, d-2, 1, rla, grid_proc, 0, j);
+        transfer_X_dgrids(ua, d-2, 1, rua, grid_proc, 0, j);
+        transfer_X_dgrids(lb, d-2, 1, rlb, grid_proc, 0, j);
+        transfer_X_dgrids(ub, d-2, 1, rub, grid_proc, 0, j);
+
+        if (grids[j]->iam == 0) {
+            for (i = 0; i < d-2; ++i) {
+                la[i] = rla[i];
+                ua[i] = rua[i];
+                lb[i] = rlb[i];
+                ub[i] = rub[i];
+            }
+
+            SUPERLU_FREE(rla);
+            SUPERLU_FREE(rua);
+            SUPERLU_FREE(rlb);
+            SUPERLU_FREE(rub);
+        }
+
+        if (grids[0]->iam != -1) {
+            MPI_Barrier(grids[0]->comm);
+        }
+        if (grids[j]->iam != -1) {
+            MPI_Barrier(grids[j]->comm);
+        }
     }
 }
 
@@ -968,4 +1017,63 @@ void dread_RHS_factor_twodim(FILE *fp, double **F, gridinfo_t *grid, int_t m_A, 
         }
     }
     *ldf = m_loc;
+}
+
+void dread_RHS_factor_multidim(FILE *fp, double **F, gridinfo_t *grid, int_t *ms, int ddeal, int *local, double **F_global)
+{
+    int_t i, j;
+    int m, n;
+    int_t m_prior, m_local, m_loc_dim, m_loc, m_loc_fst, row, fst_row;
+    int nproc = grid->nprow * grid->npcol;
+    int iam;
+
+    m_prior = 1;
+    for (j = 0; j < ddeal; ++j) {
+        m_prior *= ms[j];
+    }
+
+    if (grid->iam == 0) {
+        fscanf(fp, "%d\n", &m);
+        fscanf(fp, "%d\n", &n);
+        MPI_Bcast(&m, 1, MPI_INT, 0, grid->comm);
+        MPI_Bcast(&n, 1, MPI_INT, 0, grid->comm);
+
+        *F_global = (double *) doubleMalloc_dist(m*n);
+        for (i = 0; i < m*n; ++i) {
+            fscanf(fp, "%lf\n", &((*F_global)[i]));
+        }
+        MPI_Bcast(*F_global, m*n, MPI_DOUBLE, 0, grid->comm);
+    }
+    else {
+        MPI_Bcast(&m, 1, MPI_INT, 0, grid->comm);
+        MPI_Bcast(&n, 1, MPI_INT, 0, grid->comm);
+
+        *F_global = (double *) doubleMalloc_dist(m*n);
+        MPI_Bcast(*F_global, m*n, MPI_DOUBLE, 0, grid->comm);
+    }
+
+    m_local = ms[ddeal];
+
+    m_loc_dim = m_local / nproc;
+    m_loc = m_loc_dim * m_prior;
+    m_loc_fst = m_loc;
+    iam = grid->iam;
+    fst_row = iam * m_loc_fst;
+    /* When nrhs / procs is not an integer */
+    if ((m_loc_dim * nproc) != m_local) {
+      if (iam == (nproc - 1)) /* last proc. gets all*/
+        m_loc_dim = m_local - m_loc_dim * (nproc - 1);
+        m_loc = m_loc_dim * m_prior;
+    }
+
+    /* Get the local B */
+    if ( !((*F) = doubleMalloc_dist(m_loc*n)) )
+        ABORT("Malloc fails for F[]");
+    for (j = 0; j < n; ++j) {
+        for (i = 0; i < m_loc; ++i) {
+            row = fst_row + i;
+            (*F)[j*m_loc+i] = (*F_global)[j*m+row];
+        }
+    }
+    *local = m_loc_dim;
 }

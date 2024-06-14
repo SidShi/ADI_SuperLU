@@ -1,5 +1,7 @@
 #include "superlu_ddefs.h"
 
+void adi_grid_barrier(gridinfo_t **grids, int d);
+
 void dtransfer_size(int_t *m_A, int_t *m_B, gridinfo_t *grid_A, gridinfo_t *grid_B);
 
 void dcreate_SuperMatrix(SuperMatrix *A, gridinfo_t *grid, int_t m, int_t n, 
@@ -62,9 +64,17 @@ void dgenerate_shifts_twogrids(double a, double b, double c, double d, double **
 
 void dgather_TTcores(double **TTcores, gridinfo_t **grids, int *ms, int *rs, int *locals, int d, double **TTcores_global);
 
+void dgather_TTcores_2grids(double **TTcores, gridinfo_t *grid1, gridinfo_t *grid2, int *ms, int *rs, int *locals, int d, double **TTcores_global);
+
 void dconvertTT_tensor(double **TTcores_global, gridinfo_t **grids, int *ms, int *rs, int *locals, int d, double *X, int *grid_proc);
 
+void dconvertTT_tensor_2grids(double **TTcores_global, gridinfo_t *grid1, gridinfo_t *grid2, int *ms, int *rs, int *locals, 
+    int d, double *X, int *grid_proc);
+
 void dcheck_error_TT(int_t *ms, int_t *nnzs, double **nzvals, int_t **rowinds, int_t **colptrs, gridinfo_t **grids,
+    int *rs, int *locals, int d, double *F, double **TTcores, double *trueX, int *grid_proc);
+
+void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **rowinds, int_t **colptrs, gridinfo_t *grid1, gridinfo_t *grid2,
     int *rs, int *locals, int d, double *F, double **TTcores, double *trueX, int *grid_proc);
 
 void dredistribute_X_twogrids(double *X, double *F, double *F_transpose, gridinfo_t *grid_A, gridinfo_t *grid_B, 
@@ -73,3 +83,8 @@ void dredistribute_X_twogrids(double *X, double *F, double *F_transpose, gridinf
 void dTT_right_orthonormalization(double **TTcores, gridinfo_t **grids, int *ms, int *rs, int *locals, int d, int *grid_proc);
 
 void dTT_rounding(double **TTcores, double **TTcores_new, gridinfo_t **grids, int *ms, int *rs, int *locals, int d, int *grid_proc, double tol);
+
+void dmult_TTfADI_mat(int_t m_A, double *A, int_t m_B, int_t nnz_B, double *nzval_B, int_t *rowind_B, int_t *colptr_B,
+    double *U, int r, double *X);
+
+void dmult_TTfADI_RHS(int_t *ms, int_t *rs, int_t local, int ddeal, double *M, int nrhs, double **TTcores_global, double **newM);
