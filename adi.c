@@ -1620,6 +1620,8 @@ void fadi_ttsvd_3d_2grids(superlu_dist_options_t options, int_t m_A, int_t nnz_A
 
         if ( !(global_T1 = doubleMalloc_dist(m_A*rr1)) )
             ABORT("Malloc fails for global_T1[].");
+        if ( !(newA = doubleMalloc_dist(rr1*rr1)) )
+                ABORT("Malloc fails for newA[].");
 
         if (grid1->iam == 0) {
             printf("Grid 1 finishes fadi_col!\n");
@@ -1627,8 +1629,6 @@ void fadi_ttsvd_3d_2grids(superlu_dist_options_t options, int_t m_A, int_t nnz_A
 
             if ( !(tmpA = doubleMalloc_dist(m_A*rr1)) )
                 ABORT("Malloc fails for tmpA[].");
-            if ( !(newA = doubleMalloc_dist(rr1*rr1)) )
-                ABORT("Malloc fails for newA[].");
         }
         dgather_X(*T1, ldu1, global_T1, m_A, rr1, grid1);
         MPI_Bcast(global_T1, m_A*rr1, MPI_DOUBLE, 0, grid1->comm);
@@ -1643,6 +1643,7 @@ void fadi_ttsvd_3d_2grids(superlu_dist_options_t options, int_t m_A, int_t nnz_A
 
             dgemm_("T", "N", &rr1, &rr1, &m_A, &one, global_T1, &m_A, tmpA, &m_A, &zero, newA, &rr1);
         }
+        MPI_Bcast(newA, rr1*rr1, MPI_DOUBLE, 0, grid1->comm);
 
         if ( !(newU2 = doubleMalloc_dist(rr1*ldlu2*r2)) )
             ABORT("Malloc fails for newU2[].");
@@ -1708,11 +1709,11 @@ void fadi_ttsvd_3d_2grids(superlu_dist_options_t options, int_t m_A, int_t nnz_A
     
     if (grid1->iam == 0) {
         SUPERLU_FREE(tmpA);
-        SUPERLU_FREE(newA);
     }
     if (grid1->iam != -1) {
         SUPERLU_FREE(newU2);
         SUPERLU_FREE(global_T1);
+        SUPERLU_FREE(newA);
     }
 }
 
