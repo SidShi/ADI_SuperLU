@@ -866,7 +866,7 @@ void fadi_col_adils(superlu_dist_options_t options, int_t m_A, double *A,
     double *p, double *q, int_t l, double la, double ua, double lb, double ub, double tol, double **Z, int r, int *rank)
 {
     double *rhs_B;
-    double *localZ, *iterZ, tmp_iterZ;
+    double *localZ, *iterZ, *tmp_iterZ;
     int rr, ldu;
     int_t i, j, k;
     double *nzval_B_neg;
@@ -1724,7 +1724,6 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
     int_t  *rowind_neg1, *colptr_neg1, *rowind_neg2, *colptr_neg2;
     double **TTcores_global;
     int rr1;
-    int ldnewu2 = ldlu2*r2;
     double one = 1.0, zero = 0.0;
     char transpose[1];
     *transpose = 'N';
