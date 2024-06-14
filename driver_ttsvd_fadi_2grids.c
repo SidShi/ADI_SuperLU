@@ -287,6 +287,8 @@ int main(int argc, char *argv[])
     nprows[0] = nprow1; nprows[1] = nprow2;
     npcols[0] = npcol1; npcols[1] = npcol2;
     grid_proc[0] = nprow1 * npcol1; grid_proc[1] = nprow2 * npcol2;
+    grids = SUPERLU_MALLOC(2*sizeof(gridinfo_t*));
+    grids[0] = &grid1; grids[1] = &grid2;
     adi_gridinit_matrix(MPI_COMM_WORLD, nprow1, npcol1, &grid1, nprow2, npcol2, &grid2);
 
     if (grid1.iam==0) {
