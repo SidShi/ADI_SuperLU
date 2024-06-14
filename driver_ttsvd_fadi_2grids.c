@@ -31,6 +31,7 @@ int main(int argc, char *argv[])
 {
     superlu_dist_options_t options;
     gridinfo_t grid1, grid2;
+    gridinfo_t **grids;
     int    m_A, m_B, m_C, r1, r2, rank1, rank2, mm, rr;
     int    ms[3], rs[2];
     int    nprow1, npcol1, nprow2, npcol2, lookahead, colperm, rowperm, ir, symbfact;
