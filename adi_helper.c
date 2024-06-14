@@ -3379,7 +3379,7 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
 
     for (t = 0; t < d; ++t) {
         double **TTcores_update = (double **) SUPERLU_MALLOC(d*sizeof(double*));
-        if (gird1->iam == 0) {
+        if (grid1->iam == 0) {
             for (l = 0; l < d-1; ++l) {
                 if ( !(TTcores_update[l] = doubleMalloc_dist(aug_rs[l]*ms[l]*aug_rs[l+1])) )
                     ABORT("Malloc fails for TTcores_update[l][]");
@@ -3833,7 +3833,7 @@ void dmult_TTfADI_mat(int_t m_A, double *A, int_t m_B, int_t nnz_B, double *nzva
     dCreate_CompCol_Matrix_dist(&GB, m_B, m_B, nnz_B, nzval_B, rowind_B, colptr_B,
         SLU_NC, SLU_D, SLU_GE);
     sp_dgemm_dist(transpose, r, one, &GB, T2, m_B, zero, T3, m_B);
-    Destroy_CompCol_Matrix_dist(&GA);
+    Destroy_CompCol_Matrix_dist(&GB);
 
     for (k = 0; k < r; ++k) {
         for (j = 0; j < m_B; ++j) {
