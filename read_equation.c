@@ -460,7 +460,7 @@ void dread_shift_interval_twogrids(FILE *fp, double *a, double *b, double *c, do
 
 void dread_shift_interval_multigrids(FILE *fp, int d, double *la, double *ua, double *lb, double *ub, gridinfo_t **grids, int *grid_proc)
 {
-    int_t i;
+    int_t i, j;
     double *rla, *rua, *rlb, *rub;
 
     if (grids[0]->iam == 0) {
