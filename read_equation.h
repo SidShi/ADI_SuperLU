@@ -18,6 +18,9 @@ void dread_shift_interval(FILE *fp, double *a, double *b, double *c, double *d, 
 void dread_shift_interval_twogrids(FILE *fp, double *a, double *b, double *c, double *d, gridinfo_t *grid_A, gridinfo_t *grid_B,
     int grA, int grB, int *grid_proc);
 
+void dread_shift_multi_interval_2grids(FILE *fp, int d, double *la, double *ua, double *lb, double *ub, 
+    gridinfo_t *grid1, gridinfo_t *grid2, int *grid_proc);
+
 void dread_shift_interval_multigrids(FILE *fp, int d, double *la, double *ua, double *lb, double *ub, gridinfo_t **grids, int *grid_proc);
 
 void dread_size(FILE *fp, int d, int *ms, gridinfo_t **grids);

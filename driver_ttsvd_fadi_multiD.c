@@ -30,27 +30,27 @@
 int main(int argc, char *argv[])
 {
     superlu_dist_options_t options;
-    gridinfo_t grid_A, grid_B, grid_C, grid_D;
+    gridinfo_t grid1, grid2;
     gridinfo_t **grids;
-    int    m_A, m_B, m_C, m_D, r1, r2, r3, rank1, rank2, rank3, mm, rr, dim;
-    int    ms[4], locals[4], rs[3], nrhss[3];
-    int.   nprow_all, npcol_all;
-    int    nprow_A, npcol_A, nprow_B, npcol_B, nprow_C, npcol_C, nprow_D, npcol_D, lookahead, colperm, rowperm, ir, symbfact;
-    int    nprows[4], npcols[4], grid_proc[4];
-    int    iam_A, iam_B, iam_C, iam_D, info, ldu1, ldu2, ldu3, ldv, ldt1, ldt2, ldt3, ldt4;
+    int    m_A, m_B, m_C, m_D, mm, rr;
+    int    dim = 4;
+    int    ms[dim], rs[dim-1], locals[dim], nrhss[dim-1];
+    int    nprow1, npcol1, nprow2, npcol2, lookahead, colperm, rowperm, ir, symbfact;
+    int    nprows[2], npcols[2], grid_proc[2];
+    int    iam1, iam2, info;
     char   **cpp, c, *suffix;
     char   postfix[10];
-    FILE   *fp_A, *fp_B, *fp_C, *fp_D, *fp_shift1, *fp_shift2, *fp_shift3;
-    FILE   *fp_int, *fp_U1, *fp_U2, *fp_U3, *fp_V, *fp_X, *fp_F, *fp_M, *fp_R, *fopen();
+    FILE   *fp_A, *fp_B, *fp_C, *fp_D, *fp_shift1, *fp_shift2, *fp_shift3, *fp_int;
+    FILE   *fp_U1, *fp_U2, *fp_U3, *fp_V, *fp_X, *fp_F, *fp_M, *fp_R, *fopen();
     int ii, omp_mpi_level;
     int p; /* The following variables are used for batch solves */
     int_t i, j;
-    double *pps[3], *qqs[3];
+    double *pps[dim-1], *qqs[dim-1];
     double *V, *trueX_global, *U1_global, *U2_global, *U3_global, *V_global, *trueF_global;
-    double *Us[3];
+    double *Us[dim-1];
     double tol = 1.0/(1e10);
-    double las[2], uas[2], lbs[2], ubs[2];
-    int_t lls[3];
+    double las[dim-2], uas[dim-2], lbs[dim-2], ubs[dim-2];
+    int_t lls[dim-1];
     float result_min[2];
     result_min[0]=1e10;
     result_min[1]=1e10;
@@ -59,15 +59,10 @@ int main(int argc, char *argv[])
     result_max[1]=0.0;
     MPI_Comm SubComm;
 
-    dim = 4;
-    nprow_A = 1;  /* Default process rows.      */
-    npcol_A = 1;  /* Default process columns.   */
-    nprow_B = 1;  /* Default process rows.      */
-    npcol_B = 1;  /* Default process columns.   */
-    nprow_C = 1;  /* Default process rows.      */
-    npcol_C = 1;  /* Default process columns.   */
-    nprow_D = 1;  /* Default process rows.      */
-    npcol_D = 1;  /* Default process columns.   */
+    nprow1 = 1;  /* Default process rows.      */
+    npcol1 = 1;  /* Default process columns.   */
+    nprow2 = 1;  /* Default process rows.      */
+    npcol2 = 1;  /* Default process columns.   */
     lookahead = -1;
     colperm = -1;
     rowperm = -1;
@@ -107,19 +102,25 @@ int main(int argc, char *argv[])
 	    switch (c) {
 	      case 'h':
 		  printf("Options:\n");
-		  printf("\t-a <int>: process rows for all grids     (default %4d)\n", nprow_all);
-		  printf("\t-b <int>: process columns for all grids  (default %4d)\n", npcol_all);
-		  printf("\t-p <int>: row permutation    (default %4d)\n", options.RowPerm);
+		  printf("\t-r <int>: process rows grid 1     (default %4d)\n", nprow1);
+		  printf("\t-c <int>: process columns grid 1  (default %4d)\n", npcol1);
+          printf("\t-w <int>: process rows grid 2     (default %4d)\n", nprow2);
+          printf("\t-v <int>: process columns grid 2  (default %4d)\n", npcol2);
+          printf("\t-p <int>: row permutation    (default %4d)\n", options.RowPerm);
 		  printf("\t-q <int>: col permutation    (default %4d)\n", options.ColPerm);
 		  printf("\t-s <int>: parallel symbolic? (default %4d)\n", options.ParSymbFact);
 		  printf("\t-l <int>: lookahead level    (default %4d)\n", options.num_lookaheads);
 		  printf("\t-i <int>: iter. refinement   (default %4d)\n", options.IterRefine);
 		  exit(0);
 		  break;
-	      case 'a': nprow_all = atoi(*cpp);
+	      case 'r': nprow1 = atoi(*cpp);
 		        break;
-	      case 'b': npcol_all = atoi(*cpp);
+	      case 'c': npcol1 = atoi(*cpp);
 		        break;
+          case 'w': nprow2 = atoi(*cpp);
+                break;
+          case 'v': npcol2 = atoi(*cpp);
+                break;
           case 'l': lookahead = atoi(*cpp);
                     break;
           case 'p': rowperm = atoi(*cpp);
@@ -255,8 +256,8 @@ int main(int argc, char *argv[])
             ABORT ("File for RHS first factor of third unfolding does not exist");
         }
 
-        char buf_V[2];
-        buf_V[0] = 'V'; buf_V[1] = '\0';
+        char buf_V[3];
+        buf_V[0] = 'V'; buf_V[1] = 'b'; buf_V[2] = '\0';
         char name_V[100];
         strcpy(name_V, *cpp);
         strcat(name_V, buf_V);
@@ -320,20 +321,15 @@ int main(int argc, char *argv[])
     if (ir != -1) options.IterRefine = ir;
     if (symbfact != -1) options.ParSymbFact = symbfact;
 
-    nprow_A = nprow_all; npcol_A = npcol_all;
-    nprow_B = nprow_all; npcol_B = npcol_all;
-    nprow_C = nprow_all; npcol_C = npcol_all;
-    nprow_D = nprow_all; npcol_D = npcol_all;
-    nprows[0] = nprow_A; nprows[1] = nprow_B; nprows[2] = nprow_C; nprows[3] = nprow_D;
-    npcols[0] = npcol_A; npcols[1] = npcol_B; npcols[2] = npcol_C; npcols[3] = npcol_D;
-    grid_proc[0] = nprow_A * npcol_A; grid_proc[1] = nprow_B * npcol_B; 
-    grid_proc[2] = nprow_C * npcol_C; grid_proc[3] = nprow_D * npcol_D;
-    grids = SUPERLU_MALLOC(4*sizeof(gridinfo_t*));
-    grids[0] = &grid_A; grids[1] = &grid_B; grids[2] = &grid_C; grids[3] = &grid_D;
-    adi_gridinit_tensor(MPI_COMM_WORLD, dim, nprows, npcols, grid_proc, grids);
+    nprows[0] = nprow1; nprows[1] = nprow2;
+    npcols[0] = npcol1; npcols[1] = npcol2;
+    grid_proc[0] = nprow1 * npcol1; grid_proc[1] = nprow2 * npcol2;
+    grids = SUPERLU_MALLOC(2*sizeof(gridinfo_t*));
+    grids[0] = &grid1; grids[1] = &grid2;
+    adi_gridinit_matrix(MPI_COMM_WORLD, nprow1, npcol1, &grid1, nprow2, npcol2, &grid2);
 
-    if (grid_A.iam==0) {
-        printf("Successfully generate %d grids.\n", dim);
+    if (grid1.iam==0) {
+        printf("Successfully generate 2 grids.\n");
         fflush(stdout);
     }
     
@@ -341,7 +337,7 @@ int main(int argc, char *argv[])
     //     global_rank, grid_A.iam, grid_B.iam, grid_A.comm != MPI_COMM_NULL, grid_B.comm != MPI_COMM_NULL);
     // fflush(stdout);
     
-    if (grid_A.iam==0) {
+    if (grid1.iam==0) {
 	    MPI_Query_thread(&omp_mpi_level);
         switch (omp_mpi_level) {
           case MPI_THREAD_SINGLE:
@@ -364,14 +360,11 @@ int main(int argc, char *argv[])
     }
 
     /* Bail out if I do not belong in the grid. */
-    iam_A = grid_A.iam;
-    iam_B = grid_B.iam;
-    iam_C = grid_C.iam;
-    iam_D = grid_D.iam;
-    if (( (iam_A >= nprow_A * npcol_A) || (iam_A == -1) ) && ((iam_B >= nprow_B * npcol_B) || (iam_B == -1) ) 
-        && ( (iam_C >= nprow_C * npcol_C) || (iam_C == -1) ) && ( (iam_D >= nprow_D * npcol_D) || (iam_D == -1) )) 
+    iam1 = grid1.iam;
+    iam2 = grid2.iam;
+    if (( (iam1 >= nprow1 * npcol1) || (iam1 == -1) ) && ((iam2 >= nprow2 * npcol2) || (iam2 == -1) )) 
         goto out;
-    if ( (!iam_A) ) {
+    if ( (!iam1) ) {
     	int v_major, v_minor, v_bugfix;
 
     	printf("__STDC_VERSION__ %ld\n", __STDC_VERSION__);
@@ -380,15 +373,13 @@ int main(int argc, char *argv[])
     	printf("Library version:\t%d.%d.%d\n", v_major, v_minor, v_bugfix);
 
     	// printf("Input matrix file:\t%s\n", *cpp);
-        printf("Process grid for A:\t\t%d X %d\n", (int)grid_A.nprow, (int)grid_A.npcol);
-        printf("Process grid for B:\t\t%d X %d\n", (int)grid_B.nprow, (int)grid_B.npcol);
-        printf("Process grid for C:\t\t%d X %d\n", (int)grid_C.nprow, (int)grid_C.npcol);
-        printf("Process grid for D:\t\t%d X %d\n", (int)grid_D.nprow, (int)grid_D.npcol);
+        printf("Process grid 1:\t\t%d X %d\n", (int)grid1.nprow, (int)grid1.npcol);
+        printf("Process grid 2:\t\t%d X %d\n", (int)grid2.nprow, (int)grid2.npcol);
     	fflush(stdout);
     }
 
     /* print solver options */
-    if ( (!iam_A) ) {
+    if ( (!iam1) ) {
     	print_options_dist(&options);
     	fflush(stdout);
     }
@@ -405,107 +396,81 @@ int main(int argc, char *argv[])
     dread_size(fp_M, dim, ms, grids);
     dread_size(fp_R, dim-1, nrhss, grids);
     m_A = ms[0]; m_B = ms[1]; m_C = ms[2]; m_D = ms[3];
-    r1 = nrhss[0]; r2 = nrhss[1]; r3 = nrhss[2];
 
-    // printf("Process with id %d in grid_A, %d in grid_B, %d in grid_C, and %d in grid_D gets problem size %d, %d, %d, %d, and rhs rank %d, %d, %d.\n", 
-    //     grid_A.iam, grid_B.iam, grid_C.iam, grid_D.iam, ms[0], ms[1], ms[2], ms[3], nrhss[0], nrhss[1], nrhss[2]);
+    // printf("Process with id in grid_A %d, id in grid_B %d, and id in grid_C %d gets problem size %d, %d, %d, and rhs rank %d, %d.\n", 
+    //     grid_A.iam, grid_B.iam, grid_C.iam, ms[0], ms[1], ms[2], rs[0], rs[1]);
     // fflush(stdout);
 
-    if (iam_A != -1) {
-        dread_shift_onegrid(fp_shift1, &(pps[0]), &(qqs[0]), &(lls[0]), &grid_A);
+    if (iam1 != -1) {
+        dread_shift_onegrid(fp_shift1, &(pps[0]), &(qqs[0]), &(lls[0]), &grid1);
 
-        // printf("Grid_A proc %d gets first elements of first shift with length %d to be %f and %f.\n", 
-        //     iam_A, lls[0], pps[0][0], qqs[0][0]);
+        // printf("Grid 1 proc %d gets first elements of first shift with length %d to be %f and %f.\n", iam1, lls[0], pps[0][0], qqs[0][0]);
         // fflush(stdout);
 
-        if (!iam_A) {
-            printf("Read shifts for first equation!\n");
+        dread_shift_onegrid(fp_shift2, &(pps[1]), &(qqs[1]), &(lls[1]), &grid1);
+
+        if (!iam1) {
+            printf("Read shifts for first and second equations!\n");
             fflush(stdout);
         }
     }
 
-    if (iam_B != -1) {
-        dread_shift_onegrid(fp_shift2, &(pps[1]), &(qqs[1]), &(lls[1]), &grid_B);
+    if ((iam1 != -1) || (iam2 != -1)) {
+        dread_shift_twogrids(fp_shift3, &(pps[2]), &(qqs[2]), &(lls[2]), &grid1, &grid2, 0, 1, grid_proc);
 
-        // printf("Grid_B proc %d gets first elements of first shift with length %d to be %f and %f.\n", 
-        //     iam_B, lls[1], pps[1][0], qqs[1][0]);
+        // printf("Proc %d in grid_B and %d in grid_C gets first elements of second shift with length %d to be %f and %f.\n", iam_B, iam_C, ll2, pp2[0], qq2[0]);
         // fflush(stdout);
 
-        if (!iam_B) {
-            printf("Read shifts for second equation!\n");
-            fflush(stdout);
-        }
-    }
-
-    if ((iam_C != -1) || (iam_D != -1)) {
-        dread_shift_twogrids(fp_shift3, &(pps[2]), &(qqs[2]), &(lls[2]), &grid_C, &grid_D, 2, 3, grid_proc);
-
-        // printf("Proc %d in grid_C and %d in grid_D gets first elements of second shift with length %d to be %f and %f.\n", 
-        //     iam_C, iam_D, lls[2], pps[2][0], qqs[2][0]);
-        // fflush(stdout);
-
-        if (!iam_C) {
+        if (!iam1) {
             printf("Read shifts for third equation!\n");
             fflush(stdout);
         }
-    }
+    
+        dread_shift_multi_interval_2grids(fp_int, dim, las, uas, lbs, ubs, &grid1, &grid2, grid_proc);
 
-    dread_shift_interval_multigrids(fp_int, dim, las, uas, lbs, ubs, grids, grid_proc);
-    if (!iam_A) {
-        // printf("Read spectra bound of A and B to be %f, %f, %f, %f!\n", las[0], uas[0], lbs[0], ubs[0]);
-        printf("Read spectra bound of matrix combinations!\n");
-        fflush(stdout);
+        if (!iam1) {
+            // printf("Read spectra bound of A and B to be %f, %f, %f, %f!\n", la, ua, lb, ub);
+            printf("Read spectra bound of combinations of matrices!\n");
+            fflush(stdout);
+        }
     }
     
-    if (iam_A != -1) {
-        dread_RHS_factor(fp_U1, &(Us[0]), &grid_A, &mm, &rr, &(locals[0]), &U1_global);
-        if (!iam_A) {
-            printf("Read U1!\n");
+    if (iam1 != -1) {
+        dread_RHS_factor(fp_U1, &(Us[0]), &grid1, &mm, &rr, &(locals[0]), &U1_global);
+        // printf("Grid_A proc %d gets first and last element of U to be %f and %f.\n", iam_A, U[0], U[ldu*r-1]);
+        // fflush(stdout);
+    
+        dread_RHS_factor_multidim(fp_U2, &(Us[1]), &grid1, ms, 1, &(locals[1]), &U2_global);
+        // printf("Grid_B proc %d gets first and last element of V to be %f and %f.\n", iam_B, V[0], V[ldv*r-1]);
+        // fflush(stdout);
+
+        dread_RHS_factor_multidim(fp_U3, &(Us[2]), &grid1, ms, 2, &(locals[2]), &U3_global);
+
+        if (!iam1) {
+            printf("Read U1, U2, and U3!\n");
             fflush(stdout);
         }
-        // printf("Grid_A proc %d gets first and last element of U1 to be %f and %f.\n", iam_A, Us[0][0], Us[0][locals[0]*r1-1]);
+    }
+
+    if (iam2 != -1) {
+        dread_RHS_factor(fp_V, &V, &grid2, &mm, &rr, &(locals[3]), &V_global);
+        if (!iam2) {
+            printf("Read V2!\n");
+            fflush(stdout);
+        }
+        // printf("Grid_B proc %d gets first and last element of V to be %f and %f.\n", iam_B, V[0], V[ldv*r-1]);
         // fflush(stdout);
     }
 
-    if (iam_B != -1) {
-        dread_RHS_factor_multidim(fp_U2, &(Us[1]), &grid_B, ms, 1, &(locals[1]), &U2_global);
-        if (!iam_B) {
-            printf("Read U2!\n");
-            fflush(stdout);
-        }
-        // printf("Grid_B proc %d gets first and last element of U2 to be %f and %f.\n", iam_B, Us[1][0], Us[1][m_A*locals[1]*r2-1]);
-        // fflush(stdout);
-    }
-
-    if (iam_C != -1) {
-        dread_RHS_factor_multidim(fp_U3, &(Us[2]), &grid_C, ms, 2, &(locals[2]), &U3_global);
-        if (!iam_C) {
-            printf("Read U3!\n");
-            fflush(stdout);
-        }
-        // printf("Grid_C proc %d gets first and last element of U3 to be %f and %f.\n", iam_C, Us[2][0], Us[2][m_A*m_B*locals[2]*r3-1]);
-        // fflush(stdout);
-    }
-
-    if (iam_D != -1) {
-        dread_RHS_factor(fp_V, &V, &grid_D, &mm, &rr, &(locals[3]), &V_global);
-        if (!iam_D) {
-            printf("Read V!\n");
-            fflush(stdout);
-        }
-        // printf("Grid_D proc %d gets first and last element of V to be %f and %f.\n", iam_D, V[0], V[locals[3]*r3-1]);
-        // fflush(stdout);
-    }
-
-    dread_X(fp_X, &trueX_global, &grid_A);
-    if (!iam_A) {
+    dread_X(fp_X, &trueX_global, &grid1);
+    if (!iam1) {
         printf("Read true solution!\n");
         // printf("First element is %f.\n", trueX_global[0]);
         fflush(stdout);
     }
 
-    dread_X(fp_F, &trueF_global, &grid_A);
-    if (!iam_A) {
+    dread_X(fp_F, &trueF_global, &grid1);
+    if (!iam1) {
         printf("Read global RHS!\n");
         // printf("First element is %f.\n", trueX_global[0]);
         fflush(stdout);
@@ -516,22 +481,28 @@ int main(int argc, char *argv[])
     /* ------------------------------------------------------------
        GET A and B FROM FILE.
        ------------------------------------------------------------*/
-    int_t nnzs[4];
-    double* nzvals[4];
-    int_t* rowinds[4];
-    int_t* colptrs[4];
+    double* nzvals[dim];
+    int_t* rowinds[dim];
+    int_t* colptrs[dim];
+    int nnzs[dim];
 
-    int_t m_Atmp, n_Atmp;
-    // int_t nnz_A;
-    dread_matrix(fp_A, suffix, &grid_A, &m_Atmp, &n_Atmp, &(nnzs[0]), &(nzvals[0]), &(rowinds[0]), &(colptrs[0]));
+    dread_matrix(fp_A, suffix, &grid1, &mm, &rr, &(nnzs[0]), &(nzvals[0]), &(rowinds[0]), &(colptrs[0]));
+    dread_matrix(fp_B, suffix, &grid1, &mm, &rr, &(nnzs[1]), &(nzvals[1]), &(rowinds[1]), &(colptrs[1]));
+    dread_matrix(fp_C, suffix, &grid1, &mm, &rr, &(nnzs[2]), &(nzvals[2]), &(rowinds[2]), &(colptrs[2]));
+    if (!iam1) {
+        printf("Read A, B, and C!\n");
+        fflush(stdout);
+    }
+
+    dread_matrix(fp_D, suffix, &grid2, &mm, &rr, &(nnzs[3]), &(nzvals[3]), &(rowinds[3]), &(colptrs[3]));
+    if (!iam2) {
+        printf("Read D!\n");
+        fflush(stdout);
+    }
     
     // double *nzval_A;
     // int_t *rowind_A, *colptr_A;
-    if (!iam_A) {
-        printf("Read A!\n");
-        fflush(stdout);
-    }
-    // if (iam_A != -1) {
+    // if (iam1 != -1) {
     //     dallocateA_dist(m_A, nnz_A, &nzval_A, &rowind_A, &colptr_A);
     //     for (i = 0; i < m_A; ++i) {
     //         for (j = colptrs[0][i]; j < colptrs[0][i+1]; ++j) {
@@ -543,17 +514,20 @@ int main(int argc, char *argv[])
     //     colptr_A[m_A] = colptrs[0][m_A];
     // }
 
-    int_t m_Btmp, n_Btmp;
-    // int_t nnz_B;
-    dread_matrix(fp_B, suffix, &grid_B, &m_Btmp, &n_Btmp, &(nnzs[1]), &(nzvals[1]), &(rowinds[1]), &(colptrs[1]));
+    // printf("id in grid_A is %d, id in grid_B is %d, gets to A matrix location.\n", 
+    //     grid_A.iam, grid_B.iam);
+    // fflush(stdout);
+    // MPI_Barrier(MPI_COMM_WORLD);
+
+    // dread_matrix(fp_B, suffix, &grid1, &m_Btmp, &n_Btmp, &nnz_B, &(nzvals[1]), &(rowinds[1]), &(colptrs[1]));
 
     // double *nzval_B;
     // int_t *rowind_B, *colptr_B;
-    if (!iam_B) {
-        printf("Read B!\n");
-        fflush(stdout);
-    }
-    // if (iam_B != -1) {
+    // if (!iam1) {
+    //     printf("Read B!\n");
+    //     fflush(stdout);
+    // }
+    // if (iam1 != -1) {
     //     dallocateA_dist(m_B, nnz_B, &nzval_B, &rowind_B, &colptr_B);
     //     for (i = 0; i < m_B; ++i) {
     //         for (j = colptrs[1][i]; j < colptrs[1][i+1]; ++j) {
@@ -565,17 +539,22 @@ int main(int argc, char *argv[])
     //     colptr_B[m_B] = colptrs[1][m_B];
     // }
 
-    int_t m_Ctmp, n_Ctmp;
+    // printf("id in grid_A is %d, id in grid_B is %d, gets all data ready.\n", 
+    //     grid_A.iam, grid_B.iam);
+    // fflush(stdout);
+    // MPI_Barrier(MPI_COMM_WORLD);
+
+    // int_t m_Ctmp, n_Ctmp;
     // int_t nnz_C;
-    dread_matrix(fp_C, suffix, &grid_C, &m_Ctmp, &n_Ctmp, &(nnzs[2]), &(nzvals[2]), &(rowinds[2]), &(colptrs[2]));
+    // dread_matrix(fp_C, suffix, &grid2, &m_Ctmp, &n_Ctmp, &nnz_C, &(nzvals[2]), &(rowinds[2]), &(colptrs[2]));
 
     // double *nzval_C;
     // int_t *rowind_C, *colptr_C;
-    if (!iam_C) {
-        printf("Read C!\n");
-        fflush(stdout);
-    }
-    // if (iam_C != -1) {
+    // if (!iam2) {
+    //     printf("Read C!\n");
+    //     fflush(stdout);
+    // }
+    // if (iam2 != -1) {
     //     dallocateA_dist(m_C, nnz_C, &nzval_C, &rowind_C, &colptr_C);
     //     for (i = 0; i < m_C; ++i) {
     //         for (j = colptrs[2][i]; j < colptrs[2][i+1]; ++j) {
@@ -587,45 +566,28 @@ int main(int argc, char *argv[])
     //     colptr_C[m_C] = colptrs[2][m_C];
     // }
 
-    int_t m_Dtmp, n_Dtmp;
-    // int_t nnz_D;
-    dread_matrix(fp_D, suffix, &grid_D, &m_Dtmp, &n_Dtmp, &(nnzs[3]), &(nzvals[3]), &(rowinds[3]), &(colptrs[3]));
-
-    // double *nzval_D;
-    // int_t *rowind_D, *colptr_D;
-    if (!iam_D) {
-        printf("Read D!\n");
-        fflush(stdout);
-    }
-    // if (iam_D != -1) {
-    //     dallocateA_dist(m_D, nnz_D, &nzval_D, &rowind_D, &colptr_D);
-    //     for (i = 0; i < m_D; ++i) {
-    //         for (j = colptrs[3][i]; j < colptrs[3][i+1]; ++j) {
-    //             nzval_D[j] = nzvals[3][j];
-    //             rowind_D[j] = rowinds[3][j];
-    //         }
-    //         colptr_D[i] = colptrs[3][i];
-    //     }
-    //     colptr_D[m_D] = colptrs[3][m_D];
-    // }
+    // printf("id in grid_A is %d, id in grid_B is %d, gets all data ready.\n", 
+    //     grid_A.iam, grid_B.iam);
+    // fflush(stdout);
+    // MPI_Barrier(MPI_COMM_WORLD);
 
     MPI_Barrier(MPI_COMM_WORLD);
 
     /* ------------------------------------------------------------
        NOW WE SOLVE THE ADI.
        ------------------------------------------------------------*/
-    double* TTcores[4];
-    fadi_ttsvd(options, dim, ms, nnzs, nzvals, rowinds, colptrs, grids, Us, V, locals, nrhss, pps, qqs, lls, tol,
+    double* TTcores[dim];
+    fadi_ttsvd(options, dim, ms, nnzs, nzvals, rowinds, colptrs, &grid1, &grid2, Us, V, locals, nrhss, pps, qqs, lls, tol,
         las, uas, lbs, ubs, TTcores, rs, grid_proc);
     
-    if (!iam_A) {
+    if (!iam1) {
         printf("Get solution!\n");
         fflush(stdout);
     }
     MPI_Barrier(MPI_COMM_WORLD);
 
-    // printf("Process with id %d in grid_A, %d in grid_B, %d in grid_C, and %d in grid_D finishes solving.\n", 
-    //     grid_A.iam, grid_B.iam, grid_C.iam, grid_D.iam);
+    // printf("id in grid_A is %d, id in grid_B is %d, id in grid_C is %d, finishes solving.\n", 
+    //     grid_A.iam, grid_B.iam, grid_C.iam);
     // fflush(stdout);
     // MPI_Barrier(MPI_COMM_WORLD);
 
@@ -633,38 +595,34 @@ int main(int argc, char *argv[])
        CHECK ACCURACY OF REPRODUCED RHS.
        ------------------------------------------------------------*/
     
-    dcheck_error_TT(ms, nnzs, nzvals, rowinds, colptrs, grids, rs, locals, dim, trueF_global, TTcores, trueX_global, grid_proc);
-
-    // printf("Process with id %d in grid_A, %d in grid_B, %d in grid_C, and %d in grid_D finishes checking errors.\n", 
-    //     grid_A.iam, grid_B.iam, grid_C.iam, grid_D.iam);
+    dcheck_error_TT_2grids(ms, nnzs, nzvals, rowinds, colptrs, &grid1, &grid2, rs, locals, dim, trueF_global, TTcores, trueX_global, grid_proc);
+    
+    // printf("id in grid_A is %d, id in grid_B is %d, id in grid_C is %d, finishes checking errors.\n", 
+    //     grid_A.iam, grid_B.iam, grid_C.iam);
     // fflush(stdout);
     // MPI_Barrier(MPI_COMM_WORLD);
 
     /* ------------------------------------------------------------
        DEALLOCATE STORAGE.
        ------------------------------------------------------------*/
-    if (iam_A != -1) {
+    if (iam1 != -1) {
         SUPERLU_FREE(Us[0]);
         SUPERLU_FREE(U1_global);
         SUPERLU_FREE(pps[0]);
         SUPERLU_FREE(qqs[0]);
         SUPERLU_FREE(TTcores[0]);
-    }
-    if (iam_B != -1) {
         SUPERLU_FREE(Us[1]);
         SUPERLU_FREE(U2_global);
         SUPERLU_FREE(pps[1]);
         SUPERLU_FREE(qqs[1]);
         SUPERLU_FREE(TTcores[1]);
-    }
-    if (iam_C != -1) {
         SUPERLU_FREE(Us[2]);
         SUPERLU_FREE(U3_global);
         SUPERLU_FREE(pps[2]);
         SUPERLU_FREE(qqs[2]);
         SUPERLU_FREE(TTcores[2]);
     }
-    if (iam_D != -1) {
+    if (iam2 != -1) {
         SUPERLU_FREE(V);
         SUPERLU_FREE(V_global);
         SUPERLU_FREE(pps[2]);
@@ -672,7 +630,7 @@ int main(int argc, char *argv[])
         SUPERLU_FREE(TTcores[3]);
     }
     
-    if (!iam_A) {
+    if (!iam1) {
         SUPERLU_FREE(trueF_global);
         SUPERLU_FREE(trueX_global);
     }
@@ -694,8 +652,8 @@ int main(int argc, char *argv[])
     fclose(fp_M);
     fclose(fp_R);
 
-    // printf("Process with id %d in grid_A, %d in grid_B, %d in grid_C, and %d in grid_D releases memory.\n", 
-    //     grid_A.iam, grid_B.iam, grid_C.iam, grid_D.iam);
+    // printf("id in grid_A is %d, id in grid_B is %d, id in grid_C is %d, releases memory.\n", 
+    //     grid_A.iam, grid_B.iam, grid_C.iam);
     // fflush(stdout);
     // MPI_Barrier(MPI_COMM_WORLD);
 
@@ -703,11 +661,12 @@ int main(int argc, char *argv[])
        RELEASE THE SUPERLU PROCESS GRID.
        ------------------------------------------------------------*/
 out:
-    adi_gridexit_tensor(grids, dim);
+    adi_gridexit_matrix(&grid1, &grid2);
     SUPERLU_FREE(grids);
 
     /* ------------------------------------------------------------
        TERMINATES THE MPI EXECUTION ENVIRONMENT.
        ------------------------------------------------------------*/
     MPI_Finalize();
+
 }

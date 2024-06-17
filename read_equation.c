@@ -458,6 +458,44 @@ void dread_shift_interval_twogrids(FILE *fp, double *a, double *b, double *c, do
     }
 }
 
+void dread_shift_multi_interval_2grids(FILE *fp, int d, double *la, double *ua, double *lb, double *ub, 
+    gridinfo_t *grid1, gridinfo_t *grid2, int *grid_proc)
+{
+    int_t i, j;
+    double *rla, *rua, *rlb, *rub;
+
+    if (grid1->iam == 0) {
+        for (i = 0; i < d-2; ++i) {
+            fscanf(fp, "%lf%lf%lf%lf\n", &(la[i]), &(ua[i]), &(lb[i]), &(ub[i]));
+        }
+    }
+
+    if (grid2->iam == 0) {
+        rla = (double *) doubleMalloc_dist(d-2);
+        rua = (double *) doubleMalloc_dist(d-2);
+        rlb = (double *) doubleMalloc_dist(d-2);
+        rub = (double *) doubleMalloc_dist(d-2);
+    }
+    transfer_X_dgrids(la, d-2, 1, rla, grid_proc, 0, 1);
+    transfer_X_dgrids(ua, d-2, 1, rua, grid_proc, 0, 1);
+    transfer_X_dgrids(lb, d-2, 1, rlb, grid_proc, 0, 1);
+    transfer_X_dgrids(ub, d-2, 1, rub, grid_proc, 0, 1);
+
+    if (grid2->iam == 0) {
+        for (i = 0; i < d-2; ++i) {
+            la[i] = rla[i];
+            ua[i] = rua[i];
+            lb[i] = rlb[i];
+            ub[i] = rub[i];
+        }
+
+        SUPERLU_FREE(rla);
+        SUPERLU_FREE(rua);
+        SUPERLU_FREE(rlb);
+        SUPERLU_FREE(rub);
+    }
+}
+
 void dread_shift_interval_multigrids(FILE *fp, int d, double *la, double *ua, double *lb, double *ub, gridinfo_t **grids, int *grid_proc)
 {
     int_t i, j;
