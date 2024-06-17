@@ -34,10 +34,12 @@ int main(int argc, char *argv[])
     gridinfo_t **grids;
     int    m_A, m_B, m_C, m_D, mm, rr;
     int    dim = 4;
-    int    ms[dim], rs[dim-1], locals[dim], nrhss[dim-1];
+    int    ms[dim], rs[dim-1], locals[dim], nrhss[dim-1], nnzs[dim];
     int    nprow1, npcol1, nprow2, npcol2, lookahead, colperm, rowperm, ir, symbfact;
     int    nprows[2], npcols[2], grid_proc[2];
     int    iam1, iam2, info;
+    double *nzvals[dim];
+    int_t  *rowinds[dim], *colptrs[dim];
     char   **cpp, c, *suffix;
     char   postfix[10];
     FILE   *fp_A, *fp_B, *fp_C, *fp_D, *fp_shift1, *fp_shift2, *fp_shift3, *fp_int;
@@ -46,6 +48,7 @@ int main(int argc, char *argv[])
     int p; /* The following variables are used for batch solves */
     int_t i, j;
     double *pps[dim-1], *qqs[dim-1];
+    double *TTcores[dim];
     double *V, *trueX_global, *U1_global, *U2_global, *U3_global, *V_global, *trueF_global;
     double *Us[dim-1];
     double tol = 1.0/(1e10);
@@ -481,11 +484,6 @@ int main(int argc, char *argv[])
     /* ------------------------------------------------------------
        GET A and B FROM FILE.
        ------------------------------------------------------------*/
-    double* nzvals[dim];
-    int_t* rowinds[dim];
-    int_t* colptrs[dim];
-    int nnzs[dim];
-
     dread_matrix(fp_A, suffix, &grid1, &mm, &rr, &(nnzs[0]), &(nzvals[0]), &(rowinds[0]), &(colptrs[0]));
     dread_matrix(fp_B, suffix, &grid1, &mm, &rr, &(nnzs[1]), &(nzvals[1]), &(rowinds[1]), &(colptrs[1]));
     dread_matrix(fp_C, suffix, &grid1, &mm, &rr, &(nnzs[2]), &(nzvals[2]), &(rowinds[2]), &(colptrs[2]));
@@ -576,7 +574,6 @@ int main(int argc, char *argv[])
     /* ------------------------------------------------------------
        NOW WE SOLVE THE ADI.
        ------------------------------------------------------------*/
-    double* TTcores[dim];
     fadi_ttsvd(options, dim, ms, nnzs, nzvals, rowinds, colptrs, &grid1, &grid2, Us, V, locals, nrhss, pps, qqs, lls, tol,
         las, uas, lbs, ubs, TTcores, rs, grid_proc);
     
