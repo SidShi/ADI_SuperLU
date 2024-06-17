@@ -1799,7 +1799,7 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
         }
         dgather_X(TTcores[0], locals[0], TTcores_global[0], ms[0], rr1, grid1);
 
-        if (grids[0]->iam == 0) {
+        if (grid1->iam == 0) {
             dCreate_CompCol_Matrix_dist(&GA, ms[0], ms[0], nnzs[0], nzvals[0], rowinds[0], colptrs[0],
                 SLU_NC, SLU_D, SLU_GE);
             sp_dgemm_dist(transpose, rr1, one, &GA, TTcores_global[0], ms[0], zero, tmpA, ms[0]);
