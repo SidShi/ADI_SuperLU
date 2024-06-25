@@ -259,8 +259,8 @@ int main(int argc, char *argv[])
             ABORT ("File for RHS first factor of third unfolding does not exist");
         }
 
-        char buf_V[3];
-        buf_V[0] = 'V'; buf_V[1] = 'b'; buf_V[2] = '\0';
+        char buf_V[2];
+        buf_V[0] = 'V'; buf_V[1] = '\0';
         char name_V[100];
         strcpy(name_V, *cpp);
         strcat(name_V, buf_V);
