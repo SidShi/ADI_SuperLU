@@ -1041,15 +1041,14 @@ void fadi_sp(superlu_dist_options_t options, int_t m_A, double *A,
         }
     }
     if (grid_C->iam != -1) {
-        // printf("proc %d on C starts first step.\n", grid_C->iam);
-        // printf("V[0] is %f\n", V[0]);
-        // for (i = 0; i < ldv; ++i) {
-        //     for (j = 0; j < r; ++j) {
-        //         printf("%f ", V[j*ldv+i]);
-        //     }
-        //     printf("\n");
-        // }
-        // fflush(stdout);
+        printf("proc %d on C starts first step.\n", grid_C->iam);
+        for (i = 0; i < ldv; ++i) {
+            for (j = 0; j < r; ++j) {
+                printf("%f ", V[j*ldv+i]);
+            }
+            printf("\n");
+        }
+        fflush(stdout);
 
         for (j = 0; j < r; ++j) {
             for (i = 0; i < ldv; ++i) {
@@ -1100,8 +1099,8 @@ void fadi_sp(superlu_dist_options_t options, int_t m_A, double *A,
         pdgssvx(&options, &C, &ScalePermstruct_C, rhs_C, ldly, r, grid_C,
             &LUstruct_C, &SOLVEstruct_C, berr_C, &stat_C, &info);
 
-        // printf("proc %d on C is here.\n", grid_C->iam);
-        // fflush(stdout);
+        printf("proc %d on C is here.\n", grid_C->iam);
+        fflush(stdout);
 
         Destroy_CompRowLoc_Matrix_dist(&C);
         dScalePermstructFree(&ScalePermstruct_C);
