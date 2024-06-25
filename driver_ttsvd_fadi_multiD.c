@@ -400,9 +400,9 @@ int main(int argc, char *argv[])
     dread_size(fp_R, dim-1, nrhss, grids);
     m_A = ms[0]; m_B = ms[1]; m_C = ms[2]; m_D = ms[3];
 
-    // printf("Process with id in grid_A %d, id in grid_B %d, and id in grid_C %d gets problem size %d, %d, %d, and rhs rank %d, %d.\n", 
-    //     grid_A.iam, grid_B.iam, grid_C.iam, ms[0], ms[1], ms[2], rs[0], rs[1]);
-    // fflush(stdout);
+    printf("Process with id %d in grid1, %d in grid2 gets problem size %d, %d, %d, %d, and rhs rank %d, %d, %d.\n", 
+        grid1.iam, grid2.iam, ms[0], ms[1], ms[2], ms[3], nrhss[0], nrhss[1], nrhss[2]);
+    fflush(stdout);
 
     if (iam1 != -1) {
         dread_shift_onegrid(fp_shift1, &(pps[0]), &(qqs[0]), &(lls[0]), &grid1);
@@ -421,8 +421,9 @@ int main(int argc, char *argv[])
     if ((iam1 != -1) || (iam2 != -1)) {
         dread_shift_twogrids(fp_shift3, &(pps[2]), &(qqs[2]), &(lls[2]), &grid1, &grid2, 0, 1, grid_proc);
 
-        // printf("Proc %d in grid_B and %d in grid_C gets first elements of second shift with length %d to be %f and %f.\n", iam_B, iam_C, ll2, pp2[0], qq2[0]);
-        // fflush(stdout);
+        printf("Proc %d in grid1 and %d in grid2 gets first elements of third shift with length %d to be %f and %f.\n", 
+            iam1, iam2, lls[2], pps[2][0], qqs[2][0]);
+        fflush(stdout);
 
         if (!iam1) {
             printf("Read shifts for third equation!\n");
@@ -430,6 +431,10 @@ int main(int argc, char *argv[])
         }
     
         dread_shift_multi_interval_2grids(fp_int, dim, las, uas, lbs, ubs, &grid1, &grid2, grid_proc);
+
+        printf("Proc %d in grid1 and %d in grid2 gets final spectra intervals to use to be %f, %f, %f, and %f.\n", 
+            iam1, iam2, las[1], uas[1], lbs[1], ubs[1]);
+        fflush(stdout);
 
         if (!iam1) {
             // printf("Read spectra bound of A and B to be %f, %f, %f, %f!\n", la, ua, lb, ub);
@@ -461,8 +466,8 @@ int main(int argc, char *argv[])
             printf("Read V2!\n");
             fflush(stdout);
         }
-        // printf("Grid_B proc %d gets first and last element of V to be %f and %f.\n", iam_B, V[0], V[ldv*r-1]);
-        // fflush(stdout);
+        printf("Grid2 proc %d gets first and last element of V to be %f and %f.\n", iam2, V[0], V[locals[3]*nrhss[2]-1]);
+        fflush(stdout);
     }
 
     dread_X(fp_X, &trueX_global, &grid1);
