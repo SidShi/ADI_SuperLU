@@ -1888,6 +1888,8 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
         colptr_neg1[ms[d-2]] = colptrs[d-2][ms[d-2]];
 
         dmult_TTfADI_RHS(ms, rs, locals[d-2], d-2, Us[d-2], nrhss[d-2], TTcores_global, &(newU[d-3]));
+
+        MPI_Barrier(grid1->comm);
     }
     if (grid2->iam != -1) {
         dallocateA_dist(ms[d-1], nnzs[d-1], &nzval_neg2, &rowind_neg2, &colptr_neg2);
@@ -1899,6 +1901,8 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
             colptr_neg2[i] = colptrs[d-1][i];
         }
         colptr_neg2[ms[d-1]] = colptrs[d-1][ms[d-1]];
+
+        MPI_Barrier(grid2->comm);
     }
     if ((grid1->iam != -1) || (grid2->iam != -1)) {
         fadi_sp(options, rs[d-3], newA[d-3], ms[d-2], nnzs[d-2], nzval_neg1, rowind_neg1, colptr_neg1, 
