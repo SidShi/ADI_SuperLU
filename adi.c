@@ -1791,7 +1791,7 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
             ABORT("Malloc fails for newA[0][].");
 
         if (grid1->iam == 0) {
-            printf("Grid 1 finishes fadi_col for the first dimension!\n");
+            printf("Grid 1 finishes fadi_col for the first dimension with first TT rank %d!\n", rr1);
             fflush(stdout);
 
             if ( !(tmpA = doubleMalloc_dist(ms[0]*rr1)) )
@@ -1844,7 +1844,7 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
                 ABORT("Malloc fails for newA[k][].");
 
             if (grid1->iam == 0) {
-                printf("Grid 1 finishes fadi_col for dimension %d!\n", k+1);
+                printf("Grid 1 finishes fadi_col for dimension %d with TT rank %d!\n", k+1, rr1);
                 fflush(stdout);
             }
 
