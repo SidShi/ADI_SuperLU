@@ -960,14 +960,15 @@ void fadi_sp(superlu_dist_options_t options, int_t m_A, double *A,
     ldlz = ldu / m_A;
     ldly = ldv;
 
-    // printf("Process with id %d in B, and %d in C starts fadi_sp.\n", grid_B->iam, grid_C->iam);
-    // fflush(stdout);
+    printf("Process with id %d in B, and %d in C starts fadi_sp.\n", grid_B->iam, grid_C->iam);
+    fflush(stdout);
     // if (grid_B->iam != -1) {
     //     MPI_Barrier(grid_B->comm);
     // }
-    // if (grid_C->iam != -1) {
-    //     MPI_Barrier(grid_C->comm);
-    // }
+    if (grid_C->iam != -1) {
+        printf("Process with id %d in C has ldv %d and r %d.\n", grid_C->iam, ldv, r);
+        MPI_Barrier(grid_C->comm);
+    }
 
     if (grid_B->iam == 0) {
         if ( !(localD = doubleMalloc_dist(r*l)) )
@@ -1908,7 +1909,7 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
             printf("Grid 2 starts final fadi_sp!\n");
             fflush(stdout);
         }
-        
+
         fadi_sp(options, rs[d-3], newA[d-3], ms[d-2], nnzs[d-2], nzval_neg1, rowind_neg1, colptr_neg1, 
             ms[d-1], nnzs[d-1], nzval_neg2, rowind_neg2, colptr_neg2, grid1, grid2, 
             newU[d-3], rs[d-3]*locals[d-2], V, locals[d-1], ps[d-2], qs[d-2], ls[d-2], tol, &(TTcores[d-2]), &(TTcores[d-1]), 

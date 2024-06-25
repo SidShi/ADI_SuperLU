@@ -466,15 +466,15 @@ int main(int argc, char *argv[])
             printf("Read V2!\n");
             fflush(stdout);
         }
-        printf("Grid2 proc %d gets V of dim %d and %d.\n", 
-            iam2, locals[3], nrhss[2]);
-        for (i = 0; i < locals[3]; ++i) {
-            for (j = 0; j < nrhss[2]; ++j) {
-                printf("%f ", V[j*locals[3]+i]);
-            }
-            printf("\n");
-        }
-        fflush(stdout);
+        // printf("Grid2 proc %d gets V of dim %d and %d.\n", 
+        //     iam2, locals[3], nrhss[2]);
+        // for (i = 0; i < locals[3]; ++i) {
+        //     for (j = 0; j < nrhss[2]; ++j) {
+        //         printf("%f ", V[j*locals[3]+i]);
+        //     }
+        //     printf("\n");
+        // }
+        // fflush(stdout);
     }
 
     dread_X(fp_X, &trueX_global, &grid1);
