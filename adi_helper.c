@@ -3343,12 +3343,12 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
     }
     aug_rs[d] = 1;
 
-    printf("proc %d knows rank");
-    for (j = 0; j < d+1; ++j) {
-        printf(" %d", aug_rs[j]);
-    }
-    printf("\n");
-    fflush(stdout);
+    // printf("proc %d knows rank", global_rank);
+    // for (j = 0; j < d+1; ++j) {
+    //     printf(" %d", aug_rs[j]);
+    // }
+    // printf("\n");
+    // fflush(stdout);
 
     TTcores_global = (double **) SUPERLU_MALLOC(d*sizeof(double*));
     dgather_TTcores_2grids(TTcores, grid1, grid2, ms, rs, locals, d, TTcores_global);
@@ -3367,19 +3367,19 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
     }
     dconvertTT_tensor_2grids(TTcores_global, grid1, grid2, ms, rs, locals, d, X, grid_proc);
 
-    if (grid1->iam == 0) {
-        printf("Get reconstructed solution X from TT cores.\n");
-        for (j = 0; j < nelem; ++j) {
-            printf("%f ", X[j]);
-        }
-        printf("\n");
-        printf("True X is.\n");
-        for (j = 0; j < nelem; ++j) {
-            printf("%f ", trueX[j]);
-        }
-        printf("\n");
-        fflush(stdout);
-    }
+    // if (grid1->iam == 0) {
+    //     printf("Get reconstructed solution X from TT cores.\n");
+    //     for (j = 0; j < nelem; ++j) {
+    //         printf("%f ", X[j]);
+    //     }
+    //     printf("\n");
+    //     printf("True X is.\n");
+    //     for (j = 0; j < nelem; ++j) {
+    //         printf("%f ", trueX[j]);
+    //     }
+    //     printf("\n");
+    //     fflush(stdout);
+    // }
 
     for (t = 0; t < d; ++t) {
         double **TTcores_update = (double **) SUPERLU_MALLOC(d*sizeof(double*));
@@ -3473,8 +3473,8 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
                 }
             }
         }
-        // printf("proc %d is here for reconstruction %d.\n", global_rank, t);
-        // fflush(stdout);
+        printf("proc %d is here for reconstruction %d.\n", global_rank, t);
+        fflush(stdout);
         dconvertTT_tensor_2grids(TTcores_update, grid1, grid2, ms, rs, locals, d, AX, grid_proc);
         
         if (grid1->iam == 0) {
