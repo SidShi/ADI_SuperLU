@@ -3367,19 +3367,19 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
     }
     dconvertTT_tensor_2grids(TTcores_global, grid1, grid2, ms, rs, locals, d, X, grid_proc);
 
-    // if (grid1->iam == 0) {
-    //     printf("Get reconstructed solution X from TT cores.\n");
-    //     for (j = 0; j < nelem; ++j) {
-    //         printf("%f ", X[j]);
-    //     }
-    //     printf("\n");
-    //     printf("True X is.\n");
-    //     for (j = 0; j < nelem; ++j) {
-    //         printf("%f ", trueX[j]);
-    //     }
-    //     printf("\n");
-    //     fflush(stdout);
-    // }
+    if (grid1->iam == 0) {
+        printf("Get reconstructed solution X from TT cores.\n");
+        for (j = 0; j < nelem; ++j) {
+            printf("%f ", X[j]);
+        }
+        printf("\n");
+        printf("True X is.\n");
+        for (j = 0; j < nelem; ++j) {
+            printf("%f ", trueX[j]);
+        }
+        printf("\n");
+        fflush(stdout);
+    }
 
     for (t = 0; t < d; ++t) {
         double **TTcores_update = (double **) SUPERLU_MALLOC(d*sizeof(double*));
@@ -3404,27 +3404,27 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
                         }
                     }
 
-                    printf("Done reordering on grid 1 for iter %d for l and %d for t.\n", l, t);
-                    for (i = 0; i < ms[l]; ++i) {
-                        for (j = 0; j < aug_rs[l]*aug_rs[l+1]; ++j) {
-                            printf("%f ", tmp1[j*ms[l]+i]);
-                        }
-                        printf("\n");
-                    }
-                    fflush(stdout);
+                    // printf("Done reordering on grid 1 for iter %d for l and %d for t.\n", l, t);
+                    // for (i = 0; i < ms[l]; ++i) {
+                    //     for (j = 0; j < aug_rs[l]*aug_rs[l+1]; ++j) {
+                    //         printf("%f ", tmp1[j*ms[l]+i]);
+                    //     }
+                    //     printf("\n");
+                    // }
+                    // fflush(stdout);
                     
                     if ( !(tmp2 = doubleMalloc_dist(aug_rs[l]*ms[l]*aug_rs[l+1])) )
                         ABORT("Malloc fails for tmp2[]");
                     sp_dgemm_dist(transpose, aug_rs[l]*aug_rs[l+1], 1.0, &GA, tmp1, ms[l], 0.0, tmp2, ms[l]);
 
-                    printf("Done multiplication on grid 1 for iter %d for l and %d for t.\n", l, t);
-                    for (i = 0; i < ms[l]; ++i) {
-                        for (j = 0; j < aug_rs[l]*aug_rs[l+1]; ++j) {
-                            printf("%f ", tmp2[j*ms[l]+i]);
-                        }
-                        printf("\n");
-                    }
-                    fflush(stdout);
+                    // printf("Done multiplication on grid 1 for iter %d for l and %d for t.\n", l, t);
+                    // for (i = 0; i < ms[l]; ++i) {
+                    //     for (j = 0; j < aug_rs[l]*aug_rs[l+1]; ++j) {
+                    //         printf("%f ", tmp2[j*ms[l]+i]);
+                    //     }
+                    //     printf("\n");
+                    // }
+                    // fflush(stdout);
                     
                     for (k = 0; k < aug_rs[l+1]; ++k) {
                         for (j = 0; j < ms[l]; ++j) {
@@ -3434,8 +3434,8 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
                         }
                     }
 
-                    printf("Done reorganization on grid 1 for iter %d for l and %d for t.\n", l, t);
-                    fflush(stdout);
+                    // printf("Done reorganization on grid 1 for iter %d for l and %d for t.\n", l, t);
+                    // fflush(stdout);
 
                     SUPERLU_FREE(tmp1);
                     SUPERLU_FREE(tmp2);
@@ -3448,8 +3448,8 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
                         TTcores_update[l][j] = TTcores_global[l][j];
                     }
                 }
-                printf("Done mult on grid 1 for iter %d.\n", l);
-                fflush(stdout);
+                // printf("Done mult on grid 1 for iter %d.\n", l);
+                // fflush(stdout);
             }
         }
         else if (grid2->iam == 0) {
@@ -3496,8 +3496,8 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
                 }
             }
         }
-        printf("proc %d is here for reconstruction %d.\n", global_rank, t);
-        fflush(stdout);
+        // printf("proc %d is here for reconstruction %d.\n", global_rank, t);
+        // fflush(stdout);
         dconvertTT_tensor_2grids(TTcores_update, grid1, grid2, ms, rs, locals, d, AX, grid_proc);
         
         if (grid1->iam == 0) {
@@ -3521,8 +3521,8 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
             MPI_Barrier(grid2->comm);
         }
     }
-    printf("proc %d is here.\n", global_rank);
-    fflush(stdout);
+    // printf("proc %d is here.\n", global_rank);
+    // fflush(stdout);
 
     if (grid1->iam == 0) {
         for (j = 0; j < nelem; ++j) {
