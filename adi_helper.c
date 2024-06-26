@@ -3498,6 +3498,8 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
             MPI_Barrier(grid2->comm);
         }
     }
+    printf("proc %d is here.\n", global_rank);
+    fflush(stdout);
 
     if (grid1->iam == 0) {
         for (j = 0; j < nelem; ++j) {
