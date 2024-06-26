@@ -3427,6 +3427,8 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
                         TTcores_update[l][j] = TTcores_global[l][j];
                     }
                 }
+                printf("Done mult on grid 1 for iter %d.\n", l);
+                fflush(stdout);
             }
         }
         else if (grid2->iam == 0) {
