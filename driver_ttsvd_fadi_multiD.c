@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     double *TTcores[dim];
     double *V, *trueX_global, *U1_global, *U2_global, *U3_global, *V_global, *trueF_global;
     double *Us[dim-1];
-    double tol = 1.0/(1e10);
+    double tol = 1.0/(1e16);
     double las[dim-2], uas[dim-2], lbs[dim-2], ubs[dim-2];
     int_t lls[dim-1];
     float result_min[2];
