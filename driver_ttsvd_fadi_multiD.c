@@ -38,8 +38,8 @@ int main(int argc, char *argv[])
     int    nprow1, npcol1, nprow2, npcol2, lookahead, colperm, rowperm, ir, symbfact;
     int    nprows[2], npcols[2], grid_proc[2];
     int    iam1, iam2, info;
-    double *nzvals[dim];
-    int_t  *rowinds[dim], *colptrs[dim];
+    double *nzvals[dim], *nzvals_alt[dim];
+    int_t  *rowinds[dim], *colptrs[dim], *rowinds_alt[dim], *colptrs_alt[dim];
     char   **cpp, c, *suffix;
     char   postfix[10];
     FILE   *fp_A, *fp_B, *fp_C, *fp_D, *fp_shift1, *fp_shift2, *fp_shift3, *fp_int;
@@ -510,19 +510,48 @@ int main(int argc, char *argv[])
         fflush(stdout);
     }
     
-    // double *nzval_A;
-    // int_t *rowind_A, *colptr_A;
-    // if (iam1 != -1) {
-    //     dallocateA_dist(m_A, nnz_A, &nzval_A, &rowind_A, &colptr_A);
-    //     for (i = 0; i < m_A; ++i) {
-    //         for (j = colptrs[0][i]; j < colptrs[0][i+1]; ++j) {
-    //             nzval_A[j] = nzvals[0][j];
-    //             rowind_A[j] = rowinds[0][j];
-    //         }
-    //         colptr_A[i] = colptrs[0][i];
-    //     }
-    //     colptr_A[m_A] = colptrs[0][m_A];
-    // }
+    if (iam1 != -1) {
+        dallocateA_dist(m_A, nnzs[0], &(nzvals_alt[0]), &(rowinds_alt[0]), &(colptrs_alt[0]));
+        for (i = 0; i < m_A; ++i) {
+            for (j = colptrs[0][i]; j < colptrs[0][i+1]; ++j) {
+                nzvals_alt[0][j] = nzvals[0][j];
+                rowinds_alt[0][j] = rowinds[0][j];
+            }
+            colptrs_alt[0][i] = colptrs[0][i];
+        }
+        colptrs_alt[0][m_A] = colptrs[0][m_A];
+
+        dallocateA_dist(m_B, nnzs[1], &(nzvals_alt[1]), &(rowinds_alt[1]), &(colptrs_alt[1]));
+        for (i = 0; i < m_B; ++i) {
+            for (j = colptrs[1][i]; j < colptrs[1][i+1]; ++j) {
+                nzvals_alt[1][j] = nzvals[1][j];
+                rowinds_alt[1][j] = rowinds[1][j];
+            }
+            colptrs_alt[1][i] = colptrs[1][i];
+        }
+        colptrs_alt[1][m_B] = colptrs[1][m_B];
+
+        dallocateA_dist(m_C, nnzs[2], &(nzvals_alt[2]), &(rowinds_alt[2]), &(colptrs_alt[2]));
+        for (i = 0; i < m_C; ++i) {
+            for (j = colptrs[2][i]; j < colptrs[2][i+1]; ++j) {
+                nzvals_alt[2][j] = nzvals[2][j];
+                rowinds_alt[2][j] = rowinds[2][j];
+            }
+            colptrs_alt[2][i] = colptrs[2][i];
+        }
+        colptrs_alt[2][m_C] = colptrs[2][m_C];
+    }
+    if (iam2 != -1) {
+        dallocateA_dist(m_D, nnzs[3], &(nzvals_alt[3]), &(rowinds_alt[3]), &(colptrs_alt[3]));
+        for (i = 0; i < m_D; ++i) {
+            for (j = colptrs[3][i]; j < colptrs[3][i+1]; ++j) {
+                nzvals_alt[3][j] = nzvals[3][j];
+                rowinds_alt[3][j] = rowinds[3][j];
+            }
+            colptrs_alt[3][i] = colptrs[3][i];
+        }
+        colptrs_alt[3][m_D] = colptrs[3][m_D];
+    }
 
     // printf("id in grid_A is %d, id in grid_B is %d, gets to A matrix location.\n", 
     //     grid_A.iam, grid_B.iam);
@@ -604,7 +633,7 @@ int main(int argc, char *argv[])
        CHECK ACCURACY OF REPRODUCED RHS.
        ------------------------------------------------------------*/
     
-    dcheck_error_TT_2grids(ms, nnzs, nzvals, rowinds, colptrs, &grid1, &grid2, rs, locals, dim, trueF_global, TTcores, trueX_global, grid_proc);
+    dcheck_error_TT_2grids(ms, nnzs, nzvals_alt, rowinds_alt, colptrs_alt, &grid1, &grid2, rs, locals, dim, trueF_global, TTcores, trueX_global, grid_proc);
     
     // printf("id in grid_A is %d, id in grid_B is %d, id in grid_C is %d, finishes checking errors.\n", 
     //     grid_A.iam, grid_B.iam, grid_C.iam);
