@@ -960,15 +960,15 @@ void fadi_sp(superlu_dist_options_t options, int_t m_A, double *A,
     ldlz = ldu / m_A;
     ldly = ldv;
 
-    printf("Process with id %d in B, and %d in C starts fadi_sp.\n", grid_B->iam, grid_C->iam);
-    fflush(stdout);
+    // printf("Process with id %d in B, and %d in C starts fadi_sp.\n", grid_B->iam, grid_C->iam);
+    // fflush(stdout);
     // if (grid_B->iam != -1) {
     //     MPI_Barrier(grid_B->comm);
     // }
-    if (grid_C->iam != -1) {
-        printf("Process with id %d in C has ldv %d and r %d.\n", grid_C->iam, ldv, r);
-        MPI_Barrier(grid_C->comm);
-    }
+    // if (grid_C->iam != -1) {
+    //     printf("Process with id %d in C has ldv %d and r %d.\n", grid_C->iam, ldv, r);
+    //     MPI_Barrier(grid_C->comm);
+    // }
 
     if (grid_B->iam == 0) {
         if ( !(localD = doubleMalloc_dist(r*l)) )
@@ -1042,14 +1042,14 @@ void fadi_sp(superlu_dist_options_t options, int_t m_A, double *A,
         }
     }
     if (grid_C->iam != -1) {
-        printf("proc %d on C starts first step.\n", grid_C->iam);
-        for (i = 0; i < ldv; ++i) {
-            for (j = 0; j < r; ++j) {
-                printf("%f ", V[j*ldv+i]);
-            }
-            printf("\n");
-        }
-        fflush(stdout);
+        // printf("proc %d on C starts first step.\n", grid_C->iam);
+        // for (i = 0; i < ldv; ++i) {
+        //     for (j = 0; j < r; ++j) {
+        //         printf("%f ", V[j*ldv+i]);
+        //     }
+        //     printf("\n");
+        // }
+        // fflush(stdout);
 
         for (j = 0; j < r; ++j) {
             for (i = 0; i < ldv; ++i) {
@@ -1100,8 +1100,8 @@ void fadi_sp(superlu_dist_options_t options, int_t m_A, double *A,
         pdgssvx(&options, &C, &ScalePermstruct_C, rhs_C, ldly, r, grid_C,
             &LUstruct_C, &SOLVEstruct_C, berr_C, &stat_C, &info);
 
-        printf("proc %d on C is here.\n", grid_C->iam);
-        fflush(stdout);
+        // printf("proc %d on C is here.\n", grid_C->iam);
+        // fflush(stdout);
 
         Destroy_CompRowLoc_Matrix_dist(&C);
         dScalePermstructFree(&ScalePermstruct_C);
@@ -1906,10 +1906,10 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
         MPI_Barrier(grid2->comm);
     }
     if ((grid1->iam != -1) || (grid2->iam != -1)) {
-        if (grid2->iam != -1) {
-            printf("Grid 2 proc %d starts final fadi_sp!\n", grid2->iam);
-            fflush(stdout);
-        }
+        // if (grid2->iam != -1) {
+        //     printf("Grid 2 proc %d starts final fadi_sp!\n", grid2->iam);
+        //     fflush(stdout);
+        // }
 
         fadi_sp(options, rs[d-3], newA[d-3], ms[d-2], nnzs[d-2], nzval_neg1, rowind_neg1, colptr_neg1, 
             ms[d-1], nnzs[d-1], nzval_neg2, rowind_neg2, colptr_neg2, grid1, grid2, 
