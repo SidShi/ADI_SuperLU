@@ -3367,19 +3367,19 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
     }
     dconvertTT_tensor_2grids(TTcores_global, grid1, grid2, ms, rs, locals, d, X, grid_proc);
 
-    if (grid1->iam == 0) {
-        printf("Get reconstructed solution X from TT cores.\n");
-        for (j = 0; j < nelem; ++j) {
-            printf("%f ", X[j]);
-        }
-        printf("\n");
-        printf("True X is.\n");
-        for (j = 0; j < nelem; ++j) {
-            printf("%f ", trueX[j]);
-        }
-        printf("\n");
-        fflush(stdout);
-    }
+    // if (grid1->iam == 0) {
+    //     printf("Get reconstructed solution X from TT cores.\n");
+    //     for (j = 0; j < nelem; ++j) {
+    //         printf("%f ", X[j]);
+    //     }
+    //     printf("\n");
+    //     printf("True X is.\n");
+    //     for (j = 0; j < nelem; ++j) {
+    //         printf("%f ", trueX[j]);
+    //     }
+    //     printf("\n");
+    //     fflush(stdout);
+    // }
 
     for (t = 0; t < d; ++t) {
         double **TTcores_update = (double **) SUPERLU_MALLOC(d*sizeof(double*));
@@ -3541,7 +3541,7 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
         
         err1 = sqrt(err1) / sqrt(norm1);
         err2 = sqrt(err2) / sqrt(norm2);
-        printf("Relative error of approximating RHS is %f, and approximating true solution is %f.\n", err1, err2);
+        printf("Relative error of approximating RHS is %.10e, and approximating true solution is %.10e.\n", err1, err2);
         fflush(stdout);
 
         SUPERLU_FREE(X);
