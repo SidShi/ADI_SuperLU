@@ -3405,6 +3405,12 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
                     }
 
                     printf("Done reordering on grid 1 for iter %d for l and %d for t.\n", l, t);
+                    for (i = 0; i < ms[l]; ++i) {
+                        for (j = 0; j < aug_rs[l]*aug_rs[l+1]; ++j) {
+                            printf("%f ", tmp1[j*ms[l]+i]);
+                        }
+                        printf("\n");
+                    }
                     fflush(stdout);
                     
                     if ( !(tmp2 = doubleMalloc_dist(aug_rs[l]*ms[l]*aug_rs[l+1])) )
@@ -3412,6 +3418,12 @@ void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **row
                     sp_dgemm_dist(transpose, aug_rs[l]*aug_rs[l+1], 1.0, &GA, tmp1, ms[l], 0.0, tmp2, ms[l]);
 
                     printf("Done multiplication on grid 1 for iter %d for l and %d for t.\n", l, t);
+                    for (i = 0; i < ms[l]; ++i) {
+                        for (j = 0; j < aug_rs[l]*aug_rs[l+1]; ++j) {
+                            printf("%f ", tmp2[j*ms[l]+i]);
+                        }
+                        printf("\n");
+                    }
                     fflush(stdout);
                     
                     for (k = 0; k < aug_rs[l+1]; ++k) {
