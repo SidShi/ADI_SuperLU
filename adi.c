@@ -1776,10 +1776,11 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
         return;
     }
 
+    newA = (double **) SUPERLU_MALLOC((d-2)*sizeof(double*));
+    newU = (double **) SUPERLU_MALLOC((d-2)*sizeof(double*));
+
     if (grid1->iam != -1) {
         TTcores_global = (double **) SUPERLU_MALLOC((d-2)*sizeof(double*));
-        newA = (double **) SUPERLU_MALLOC((d-2)*sizeof(double*));
-        newU = (double **) SUPERLU_MALLOC((d-2)*sizeof(double*));
 
         fadi_col(options, ms[0], nnzs[0], nzvals[0], rowinds[0], colptrs[0], grid1, Us[0], locals[0], 
             ps[0], qs[0], ls[0], tol, &(TTcores[0]), nrhss[0], &rr1);
@@ -1905,8 +1906,8 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
         MPI_Barrier(grid2->comm);
     }
     if ((grid1->iam != -1) || (grid2->iam != -1)) {
-        if (grid2->iam == 0) {
-            printf("Grid 2 starts final fadi_sp!\n");
+        if (grid2->iam != -1) {
+            printf("Grid 2 proc %d starts final fadi_sp!\n", grid2->iam);
             fflush(stdout);
         }
 
@@ -1939,9 +1940,9 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
             SUPERLU_FREE(newU[j]);
         }
         SUPERLU_FREE(TTcores_global);
-        SUPERLU_FREE(newA);
-        SUPERLU_FREE(newU);
     }
+    SUPERLU_FREE(newA);
+    SUPERLU_FREE(newU);
 }
 
 void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_A, double *nzval_A, int_t *rowind_A, int_t *colptr_A,
