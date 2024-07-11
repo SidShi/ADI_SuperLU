@@ -754,7 +754,7 @@ void fadi_col(superlu_dist_options_t options, int_t m_A, int_t nnz_A, double *nz
     double *iterZ;
     int info;
     int ldlz;
-    int rr;
+    int rr, ovsamp;
     int_t i, j, k;
     double *berr_A;
     SuperLUStat_t stat_A;
@@ -842,7 +842,9 @@ void fadi_col(superlu_dist_options_t options, int_t m_A, int_t nnz_A, double *nz
     // fflush(stdout);
     // MPI_Barrier(grid_A->comm);
 
-    dCPQR_dist_getQ(localZ, ldu, Z, r*l, rank, grid_A, tol);
+    // dCPQR_dist_getQ(localZ, ldu, Z, r*l, rank, grid_A, tol);
+    ovsamp = r*l >= 20 ? 5 : 2;
+    dCPQR_dist_rand_getQ(localZ, ldu, Z, r*l, rank, grid_A, tol, ovsamp);
 
     // printf("Proc %d in grid_A gets T1 after truncation.\n", grid_A->iam);
     // for (i = 0; i < ldu; ++i) {
@@ -867,7 +869,7 @@ void fadi_col_adils(superlu_dist_options_t options, int_t m_A, double *A,
 {
     double *rhs_B;
     double *localZ, *iterZ, *tmp_iterZ;
-    int rr, ldu;
+    int rr, ldu, ovsamp;
     int_t i, j, k;
     double *nzval_B_neg;
     int_t  *rowind_B_neg, *colptr_B_neg;
@@ -924,7 +926,9 @@ void fadi_col_adils(superlu_dist_options_t options, int_t m_A, double *A,
         MPI_Barrier(grid->comm);
     }
 
-    dCPQR_dist_getQ(localZ, ldu, Z, r*l, rank, grid, tol);
+    // dCPQR_dist_getQ(localZ, ldu, Z, r*l, rank, grid, tol);
+    ovsamp = r*l >= 20 ? 5 : 2;
+    dCPQR_dist_rand_getQ(localZ, ldu, Z, r*l, rank, grid, tol, ovsamp);
 
     MPI_Barrier(grid->comm);
 
@@ -1956,7 +1960,7 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
     SuperMatrix A, C;
     double *nzval_B_neg, *nzval_C_neg;
     int_t  *rowind_B_neg, *colptr_B_neg, *rowind_C_neg, *colptr_C_neg;
-    int rr2, tmpr2;
+    int rr2, tmpr2, ovsamp;
     double one = 1.0, zero = 0.0;
     char     transpose[1];
     *transpose = 'N';
@@ -2390,7 +2394,9 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
     // fflush(stdout);
 
     if (iam_A != -1) {
-        dCPQR_dist_getQ(localZ, ldu1, T1, r1*l, rank1, grid_A, tol);
+        // dCPQR_dist_getQ(localZ, ldu1, T1, r1*l, rank1, grid_A, tol);
+        ovsamp = r1*l >= 20 ? 5 : 2;
+        dCPQR_dist_rand_getQ(localZ, ldu1, T1, r1*l, rank1, grid_A, tol, ovsamp);
 
         // printf("Proc %d in grid_A gets T1.\n", grid_A->iam);
         // for (i = 0; i < ldu1; ++i) {

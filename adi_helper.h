@@ -37,6 +37,10 @@ void dQR_dist(double *localX, int local_ldx, double **localQ, double **R, int nr
 
 void dCPQR_dist_getQ(double *localX, int local_ldx, double **localQ, int nrhs, int *rank, gridinfo_t *grid, double tol);
 
+void dCPQR_dist_getrank(double *localX, int local_ldx, int nrhs, int *rank, gridinfo_t *grid, double tol);
+
+void dCPQR_dist_rand_getQ(double *localX, int local_ldx, double **localQ, int nrhs, int *rank, gridinfo_t *grid, double tol, int ovsamp);
+
 void drecompression_dist(double *localX, int local_ldx, int global_ldx, double **localU, double *D, double **S, gridinfo_t *grid_A,
     double *localY, int local_ldy, int global_ldy, double **localV, gridinfo_t *grid_B, int *nrhs, double tol);
 

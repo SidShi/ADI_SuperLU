@@ -1184,6 +1184,178 @@ void dCPQR_dist_getQ(double *localX, int local_ldx, double **localQ, int nrhs, i
     }
 }
 
+void dCPQR_dist_getrank(double *localX, int local_ldx, int nrhs, int *rank, gridinfo_t *grid, double tol)
+{
+    int_t    i, j, k, p, ct, offset, rnum, rnum_total, newr;
+    int      iam = grid->iam;
+    int      nproc = grid->nprow * grid->npcol;
+    int      rnum_comb[nproc], localR_disp[nproc];
+    int      m_local_comb[nproc], m_local_disp[nproc], m_local_scatter[nproc], m_local_scatter_disp[nproc];
+    double   *temp_localQ, *localR, *gathered_localR, *gathered_localR_mat;
+    int      *localPerm;
+    double   *tau_local, *WORK_local, *tau_global, *WORK_global;
+    int      INFO_local, LWORK_local, INFO_global, LWORK_global;
+    int      m_local = local_ldx, n_local = nrhs, n_global = nrhs;
+    int      lengtau_local = m_local <= n_local ? m_local : n_local;
+    int      m_global, lengtau_global;
+    double   one = 1.0, zero = 0.0, WKOPT_local, WKOPT_global;
+
+    if ( !(temp_localQ = doubleMalloc_dist(local_ldx*nrhs)) )
+        ABORT("Malloc fails for temp_localQ[]");
+    for (j = 0; j < nrhs; ++j) {
+        for (i = 0; i < local_ldx; ++i) {
+            temp_localQ[j*local_ldx+i] = localX[j*local_ldx+i];
+        }
+    }
+
+    LWORK_local = -1;
+    if ( !(tau_local = doubleMalloc_dist(lengtau_local)) )
+        ABORT("Malloc fails for tau_local[]");
+    dgeqrf_(&m_local, &n_local, temp_localQ, &m_local, tau_local, &WKOPT_local, &LWORK_local, &INFO_local);
+    LWORK_local = (int) WKOPT_local;
+    if ( !(WORK_local = doubleMalloc_dist(LWORK_local)) )
+        ABORT("Malloc fails for WORK_local[]");
+    dgeqrf_(&m_local, &n_local, temp_localQ, &m_local, tau_local, WORK_local, &LWORK_local, &INFO_local);
+
+    rnum = m_local >= n_local ? nrhs*(nrhs+1)/2 : m_local*(nrhs+nrhs-m_local+1)/2;
+    if ( !(localR = doubleMalloc_dist(rnum)) )
+        ABORT("Malloc fails for localR[]");
+    ct = 0;
+    for (j = 0; j < nrhs; ++j) {
+        k = j >= lengtau_local ? lengtau_local-1 : j;
+        for (i = 0; i <= k; ++i) {
+            localR[ct] = temp_localQ[j*local_ldx+i];
+            ct++;
+        }
+    }
+
+    MPI_Gather(&rnum, 1, MPI_INT, rnum_comb, 1, MPI_INT, 0, grid->comm);
+    if (!iam) {
+        localR_disp[0] = 0;
+        for (j = 1; j < nproc; ++j) {
+            localR_disp[j] = localR_disp[j-1] + rnum_comb[j-1];
+        }
+        rnum_total = localR_disp[nproc-1] + rnum_comb[nproc-1];
+    
+        if ( !(gathered_localR = doubleMalloc_dist(rnum_total)) )
+            ABORT("Malloc fails for gathered_localR[]");
+    }
+    MPI_Gatherv(localR, rnum, MPI_DOUBLE, gathered_localR, rnum_comb, localR_disp, MPI_DOUBLE, 0, grid->comm);
+    MPI_Gather(&lengtau_local, 1, MPI_INT, m_local_comb, 1, MPI_INT, 0, grid->comm);
+    if (!iam) {
+        if ( !(gathered_localR = doubleMalloc_dist(nproc*rnum)) )
+            ABORT("Malloc fails for gathered_localR[]");
+    }
+    MPI_Gather(localR, rnum, MPI_DOUBLE, gathered_localR, rnum, MPI_DOUBLE, 0, grid->comm);
+    if (!iam) {
+        m_local_disp[0] = 0;
+        for (p = 1; p < nproc; ++p) {
+            m_local_disp[p] = m_local_disp[p-1] + m_local_comb[p-1];
+        }
+        m_global = m_local_disp[nproc-1] + m_local_comb[nproc-1];
+
+        if ( !(gathered_localR_mat = doubleMalloc_dist(m_global*nrhs)) )
+            ABORT("Malloc fails for gathered_localR_mat[]");
+        for (p = 0; p < nproc; ++p) {
+            for (j = 0; j < nrhs; ++j) {
+                offset = j < m_local_comb[p] ? j*(j+1)/2 : m_local_comb[p]*(m_local_comb[p]+1)/2+(j-m_local_comb[p])*m_local_comb[p];
+                for (i = 0; i < m_local_comb[p]; ++i) {
+                    gathered_localR_mat[j*m_global+m_local_disp[p]+i] = i <= j ? gathered_localR[localR_disp[p]+offset+i] : 0.0;
+                }
+            }
+        }
+
+        LWORK_global = -1;
+        lengtau_global = m_global <= n_global ? m_global : n_global;
+        if ( !(tau_global = doubleMalloc_dist(lengtau_global)) )
+            ABORT("Malloc fails for tau_global[]");
+        if ( !(localPerm = intMalloc_dist(nrhs)) )
+            ABORT("Malloc fails for localPerm[]");
+        for (j = 0; j < nrhs; ++j) {
+            localPerm[j] = 0;
+        }
+        dgeqp3_(&m_global, &n_global, gathered_localR_mat, &m_global, localPerm, tau_global, &WKOPT_global, &LWORK_global, &INFO_global);
+        LWORK_global = (int) WKOPT_global;
+        if ( !(WORK_global = doubleMalloc_dist(LWORK_global)) )
+            ABORT("Malloc fails for WORK_global[]");
+        dgeqp3_(&m_global, &n_global, gathered_localR_mat, &m_global, localPerm, tau_global, WORK_global, &LWORK_global, &INFO_global);
+
+        newr = 0;
+        for (j = 0; j < lengtau_global; ++j) {
+            // printf("%dth diagonal element is %f.\n", j+1, gathered_localR_mat[j*m_global+j]);
+            if (fabs(gathered_localR_mat[j*m_global+j]) <= tol) {
+                break;
+            }
+            newr++;
+        }
+        // printf("Truncated rank is %d.\n", newr);
+        // fflush(stdout);
+        MPI_Bcast(&newr, 1, MPI_INT, 0, grid->comm);
+
+        SUPERLU_FREE(gathered_localR);
+        SUPERLU_FREE(gathered_localR_mat);
+        SUPERLU_FREE(tau_global);
+        SUPERLU_FREE(WORK_global);
+        SUPERLU_FREE(localPerm);
+    }
+    else {
+        MPI_Bcast(&newr, 1, MPI_INT, 0, grid->comm);
+    }
+
+    *rank = newr;
+
+    SUPERLU_FREE(temp_localQ);
+    SUPERLU_FREE(tau_local);
+    SUPERLU_FREE(WORK_local);
+    SUPERLU_FREE(localR);
+}
+
+void dCPQR_dist_rand_getQ(double *localX, int local_ldx, double **localQ, int nrhs, int *rank, gridinfo_t *grid, double tol, int ovsamp)
+{
+    int_t i, j;
+    int rand_col, rand_tot, opts = 3;
+    int r1 = rand()%4096, r2 = rand()%4096, r3 = rand()%4096, r4 = rand()%4096;
+    int iseed[4] = {r1, r2, r3, r4+(r4%2 == 0?1:0)};
+    double *rand_mat, *local_X_rand, *R, *tmpQ;
+    double one = 1.0, zero = 0.0;
+
+    if (grid->iam != -1) {
+        dCPQR_dist_getrank(localX, local_ldx, nrhs, rank, grid, tol);
+    }
+
+    rand_col = *rank + ovsamp;
+    rand_tot = nrhs * rand_col;
+    if ( !(rand_mat = doubleMalloc_dist(rand_tot)) )
+        ABORT("Malloc fails for rand_mat[]");
+    if ( !(local_X_rand = doubleMalloc_dist(local_ldx*rand_col)) )
+        ABORT("Malloc fails for local_X_rand[]");
+    if ( !(*localQ = doubleMalloc_dist(local_ldx*(*rank))) )
+        ABORT("Malloc fails for localQ[]");
+
+    if (grid->iam == 0) {
+        dlarnv_(&opts, iseed, &rand_tot, rand_mat);
+    }
+    if (grid->iam != -1) {
+        MPI_Bcast(rand_mat, rand_tot, MPI_DOUBLE, 0, grid->comm);
+
+        dgemm_("N", "N", &local_ldx, &rand_col, &nrhs, &one, localX, &local_ldx, rand_mat, &nrhs, &zero, local_X_rand, &local_ldx);
+
+        dQR_dist(local_X_rand, local_ldx, &tmpQ, &R, rand_col, grid);
+
+        for (j = 0; j < *rank; ++j) {
+            for (i = 0; i < local_ldx; ++i) {
+                (*localQ)[j*local_ldx+i] = tmpQ[j*local_ldx+i];
+            }
+        }
+
+        SUPERLU_FREE(tmpQ);
+        SUPERLU_FREE(R);
+    }
+
+    SUPERLU_FREE(local_X_rand);
+    SUPERLU_FREE(rand_mat);
+}
+
 void dtruncated_SVD(double *X, int m, int n, int *r, double **U, double **S, double **V, double tol)
 {
     int_t i, j;
