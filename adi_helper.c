@@ -1321,6 +1321,11 @@ void dCPQR_dist_rand_getQ(double *localX, int local_ldx, double **localQ, int nr
 
     if (grid->iam != -1) {
         dCPQR_dist_getrank(localX, local_ldx, nrhs, rank, grid, tol);
+
+        if (grid->iam == 0) {
+            printf("Rank found is %d.\n", *rank);
+            fflush(stdout);
+        }
     }
 
     rand_col = *rank + ovsamp;
@@ -1338,7 +1343,12 @@ void dCPQR_dist_rand_getQ(double *localX, int local_ldx, double **localQ, int nr
     if (grid->iam != -1) {
         MPI_Bcast(rand_mat, rand_tot, MPI_DOUBLE, 0, grid->comm);
 
+        printf("Grid %d in the grid gets random matrix.\n", grid->iam);
+        fflush(stdout);
+
         dgemm_("N", "N", &local_ldx, &rand_col, &nrhs, &one, localX, &local_ldx, rand_mat, &nrhs, &zero, local_X_rand, &local_ldx);
+        printf("Grid %d in the grid gets multiplication done.\n", grid->iam);
+        fflush(stdout);
 
         dQR_dist(local_X_rand, local_ldx, &tmpQ, &R, rand_col, grid);
 
