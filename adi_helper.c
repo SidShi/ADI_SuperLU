@@ -1351,6 +1351,8 @@ void dCPQR_dist_rand_getQ(double *localX, int local_ldx, double **localQ, int nr
         fflush(stdout);
 
         dQR_dist(local_X_rand, local_ldx, &tmpQ, &R, rand_col, grid);
+        printf("Grid %d in the grid gets QR.\n", grid->iam);
+        fflush(stdout);
 
         for (j = 0; j < *rank; ++j) {
             for (i = 0; i < local_ldx; ++i) {
