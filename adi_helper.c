@@ -1360,6 +1360,8 @@ void dCPQR_dist_rand_getQ(double *localX, int local_ldx, int global_ldx, double 
                 (*localQ)[j*local_ldx+i] = tmpQ[j*local_ldx+i];
             }
         }
+        printf("Grid %d in the grid gets final Q.\n", grid->iam);
+        fflush(stdout);
 
         SUPERLU_FREE(tmpQ);
         SUPERLU_FREE(R);
