@@ -844,7 +844,7 @@ void fadi_col(superlu_dist_options_t options, int_t m_A, int_t nnz_A, double *nz
 
     // dCPQR_dist_getQ(localZ, ldu, Z, r*l, rank, grid_A, tol);
     ovsamp = r*l >= 20 ? 5 : 2;
-    dCPQR_dist_rand_getQ(localZ, ldu, Z, r*l, rank, grid_A, tol, ovsamp);
+    dCPQR_dist_rand_getQ(localZ, ldu, m_A, Z, r*l, rank, grid_A, tol, ovsamp);
 
     // printf("Proc %d in grid_A gets T1 after truncation.\n", grid_A->iam);
     // for (i = 0; i < ldu; ++i) {
@@ -928,7 +928,7 @@ void fadi_col_adils(superlu_dist_options_t options, int_t m_A, double *A,
 
     // dCPQR_dist_getQ(localZ, ldu, Z, r*l, rank, grid, tol);
     ovsamp = r*l >= 20 ? 5 : 2;
-    dCPQR_dist_rand_getQ(localZ, ldu, Z, r*l, rank, grid, tol, ovsamp);
+    dCPQR_dist_rand_getQ(localZ, ldu, m_A*m_B, Z, r*l, rank, grid, tol, ovsamp);
 
     MPI_Barrier(grid->comm);
 
@@ -2396,7 +2396,7 @@ void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_
     if (iam_A != -1) {
         // dCPQR_dist_getQ(localZ, ldu1, T1, r1*l, rank1, grid_A, tol);
         ovsamp = r1*l >= 20 ? 5 : 2;
-        dCPQR_dist_rand_getQ(localZ, ldu1, T1, r1*l, rank1, grid_A, tol, ovsamp);
+        dCPQR_dist_rand_getQ(localZ, ldu1, m_A, T1, r1*l, rank1, grid_A, tol, ovsamp);
 
         // printf("Proc %d in grid_A gets T1.\n", grid_A->iam);
         // for (i = 0; i < ldu1; ++i) {

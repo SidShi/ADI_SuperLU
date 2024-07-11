@@ -1310,7 +1310,8 @@ void dCPQR_dist_getrank(double *localX, int local_ldx, int nrhs, int *rank, grid
     SUPERLU_FREE(localR);
 }
 
-void dCPQR_dist_rand_getQ(double *localX, int local_ldx, double **localQ, int nrhs, int *rank, gridinfo_t *grid, double tol, int ovsamp)
+void dCPQR_dist_rand_getQ(double *localX, int local_ldx, int global_ldx, double **localQ, int nrhs, 
+    int *rank, gridinfo_t *grid, double tol, int ovsamp)
 {
     int_t i, j;
     int rand_col, rand_tot, opts = 3;
@@ -1328,7 +1329,7 @@ void dCPQR_dist_rand_getQ(double *localX, int local_ldx, double **localQ, int nr
         }
     }
 
-    rand_col = *rank + ovsamp > nrhs ? nrhs : *rank + ovsamp;
+    rand_col = *rank + ovsamp > global_ldx ? global_ldx : *rank + ovsamp;
     rand_tot = nrhs * rand_col;
     if ( !(rand_mat = doubleMalloc_dist(rand_tot)) )
         ABORT("Malloc fails for rand_mat[]");
