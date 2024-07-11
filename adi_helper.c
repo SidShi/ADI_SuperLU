@@ -1328,7 +1328,7 @@ void dCPQR_dist_rand_getQ(double *localX, int local_ldx, double **localQ, int nr
         }
     }
 
-    rand_col = *rank + ovsamp;
+    rand_col = *rank + ovsamp > nrhs ? nrhs : *rank + ovsamp;
     rand_tot = nrhs * rand_col;
     if ( !(rand_mat = doubleMalloc_dist(rand_tot)) )
         ABORT("Malloc fails for rand_mat[]");
@@ -1343,7 +1343,7 @@ void dCPQR_dist_rand_getQ(double *localX, int local_ldx, double **localQ, int nr
     if (grid->iam != -1) {
         MPI_Bcast(rand_mat, rand_tot, MPI_DOUBLE, 0, grid->comm);
 
-        printf("Grid %d in the grid gets random matrix.\n", grid->iam);
+        printf("Grid %d in the grid gets random matrix with %d columns.\n", grid->iam, rand_col);
         fflush(stdout);
 
         dgemm_("N", "N", &local_ldx, &rand_col, &nrhs, &one, localX, &local_ldx, rand_mat, &nrhs, &zero, local_X_rand, &local_ldx);
