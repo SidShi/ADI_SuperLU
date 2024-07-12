@@ -1364,7 +1364,9 @@ void dCPQR_dist_rand_getQ(double *localX, int local_ldx, int global_ldx, double 
         fflush(stdout);
 
         SUPERLU_FREE(tmpQ);
-        SUPERLU_FREE(R);
+        if (grid->iam == 0) {
+            SUPERLU_FREE(R);
+        }
     }
 
     SUPERLU_FREE(local_X_rand);

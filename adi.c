@@ -1786,15 +1786,9 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
     if (grid1->iam != -1) {
         TTcores_global = (double **) SUPERLU_MALLOC((d-2)*sizeof(double*));
 
-        printf("Proc %d in Grid 1 starts fadi_col for the first dimension!\n", grid1->iam);
-        fflush(stdout);
-
         fadi_col(options, ms[0], nnzs[0], nzvals[0], rowinds[0], colptrs[0], grid1, Us[0], locals[0], 
             ps[0], qs[0], ls[0], tol, &(TTcores[0]), nrhss[0], &rr1);
         rs[0] = rr1;
-
-        printf("Proc %d in Grid 1 finishes fadi_col for the first dimension with first TT rank %d!\n", grid1->iam, rr1);
-        fflush(stdout);
 
         if ( !(TTcores_global[0] = doubleMalloc_dist(ms[0]*rr1)) )
             ABORT("Malloc fails for TTcores_global[0][].");
