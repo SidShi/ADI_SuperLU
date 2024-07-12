@@ -795,7 +795,7 @@ void fadi_col(superlu_dist_options_t options, int_t m_A, int_t nnz_A, double *nz
 
     for (j = 0; j < r; ++j) {
         for (i = 0; i < ldu; ++i) {
-            localZ[j*ldu+i] = rhs_A[j*ldu+i];
+            localZ[j*ldu+i] = rhs_A[j*ldu+i]*(q[0]-p[0]);
             iterZ[j*ldu+i] = rhs_A[j*ldu+i];
         }
     }
@@ -825,7 +825,7 @@ void fadi_col(superlu_dist_options_t options, int_t m_A, int_t nnz_A, double *nz
         for (j = 0; j < r; ++j) {
             for (i = 0; i < ldu; ++i) {
                 iterZ[j*ldu+i] += rhs_A[j*ldu+i];
-                localZ[k*r*ldu+j*ldu+i] = iterZ[j*ldu+i];
+                localZ[k*r*ldu+j*ldu+i] = iterZ[j*ldu+i]*(q[k]-p[k]);
             }
         }
               
@@ -903,7 +903,7 @@ void fadi_col_adils(superlu_dist_options_t options, int_t m_A, double *A,
     adi_ls(options, m_A, A, m_B, nnz_B, nzval_B_neg, rowind_B_neg, colptr_B_neg, grid, rhs_B, local_b, r, q[0], la, ua, lb, ub, iterZ);
     for (j = 0; j < r; ++j) {
         for (i = 0; i < ldu; ++i) {
-            localZ[j*ldu+i] = iterZ[j*ldu+i];
+            localZ[j*ldu+i] = iterZ[j*ldu+i]*(q[0]-p[0]);
         }
     }
     MPI_Barrier(grid->comm);
@@ -919,7 +919,7 @@ void fadi_col_adils(superlu_dist_options_t options, int_t m_A, double *A,
         for (j = 0; j < r; ++j) {
             for (i = 0; i < ldu; ++i) {
                 iterZ[j*ldu+i] += tmp_iterZ[j*ldu+i];
-                localZ[k*r*ldu+j*ldu+i] = iterZ[j*ldu+i];
+                localZ[k*r*ldu+j*ldu+i] = iterZ[j*ldu+i]*(q[k]-p[k]);
             }
         }
               
