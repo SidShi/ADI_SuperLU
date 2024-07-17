@@ -1856,6 +1856,11 @@ void fadi_ttsvd_3d_2grids_rep(superlu_dist_options_t options, int_t m_A, int_t n
         m_C, nnz_C, nzval_C, rowind_C, colptr_C, grid1, grid2, U1, ldu1, U2, ldu2, V2, ldv2, p1, q1, l1, p2, q2, l2, 
         tol, la, ua, lb, ub, &(TTcores_old[0]), &(TTcores_old[1]), &(TTcores_old[2]), r1, r2, &rr1, &rr2, grid_proc);
 
+    if (grid1->iam == 0) {
+        printf("Finish with basic solve.\n");
+        fflush(stdout);
+    }
+
     for (l = 0; l < rep; ++l) {
         if (l % 2 == 0) {
             if (grid2->iam != -1) {
@@ -1877,6 +1882,11 @@ void fadi_ttsvd_3d_2grids_rep(superlu_dist_options_t options, int_t m_A, int_t n
             fadi_ttsvd_3d_2grids_1core(options, m_C, nnz_C, nzval_C, rowind_C, colptr_C, m_B, nnz_B, nzval_B, rowind_B, colptr_B,
                 m_A, nnz_A, nzval_A, rowind_A, colptr_A, grid2, grid1, ldv2, V1, ldv1, U1, ldu1,
                 q1_neg, p1_neg, l1, tol, lc, uc, lb, ub, TTcores_new[0], &(TTcores_new[1]), &(TTcores_new[2]), r1, rr2, &rr1, grid_proc, 1, 0);
+
+            if (grid2->iam == 0) {
+                printf("Finish with rep number %d.\n", l+1);
+                fflush(stdout);
+            }
         }
         else {
             if (grid1->iam != -1) {
@@ -1898,6 +1908,11 @@ void fadi_ttsvd_3d_2grids_rep(superlu_dist_options_t options, int_t m_A, int_t n
             fadi_ttsvd_3d_2grids_1core(options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, m_B, nnz_B, nzval_B, rowind_B, colptr_B,
                 m_C, nnz_C, nzval_C, rowind_C, colptr_C, grid1, grid2, ldu1, U2, ldu2, V2, ldv2,
                 p2, q2, l2, tol, la, ua, lb, ub, TTcores_old[0], &(TTcores_old[1]), &(TTcores_old[2]), r2, rr1, &rr2, grid_proc, 0, 1);
+
+            if (grid1->iam == 0) {
+                printf("Finish with rep number %d.\n", l+1);
+                fflush(stdout);
+            }
         }
     }
 
