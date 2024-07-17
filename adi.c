@@ -1046,14 +1046,14 @@ void fadi_sp(superlu_dist_options_t options, int_t m_A, double *A,
         }
     }
     if (grid_C->iam != -1) {
-        printf("proc %d on C starts first step.\n", grid_C->iam);
-        for (i = 0; i < ldv; ++i) {
-            for (j = 0; j < r; ++j) {
-                printf("%f ", V[j*ldv+i]);
-            }
-            printf("\n");
-        }
-        fflush(stdout);
+        // printf("proc %d on C starts first step.\n", grid_C->iam);
+        // for (i = 0; i < ldv; ++i) {
+        //     for (j = 0; j < r; ++j) {
+        //         printf("%f ", V[j*ldv+i]);
+        //     }
+        //     printf("\n");
+        // }
+        // fflush(stdout);
 
         for (j = 0; j < r; ++j) {
             for (i = 0; i < ldv; ++i) {
@@ -1061,14 +1061,14 @@ void fadi_sp(superlu_dist_options_t options, int_t m_A, double *A,
             }
         }
 
-        // printf("First RHS on proc %d in C is\n", grid_C->iam);
-        // for (i = 0; i < ldv; ++i) {
-        //     for (j = 0; j < r; ++j) {
-        //         printf("%f ", rhs_C[j*ldv+i]);
-        //     }
-        //     printf("\n");
-        // }
-        // fflush(stdout);
+        printf("First RHS on proc %d in C is\n", grid_C->iam);
+        for (i = 0; i < ldv; ++i) {
+            for (j = 0; j < r; ++j) {
+                printf("%f ", rhs_C[j*ldv+i]);
+            }
+            printf("\n");
+        }
+        fflush(stdout);
 
         // if (grid_C->iam == 0) {
         //     printf("nnz is %d.\n", nnz_C);
@@ -1104,8 +1104,8 @@ void fadi_sp(superlu_dist_options_t options, int_t m_A, double *A,
         pdgssvx(&options, &C, &ScalePermstruct_C, rhs_C, ldly, r, grid_C,
             &LUstruct_C, &SOLVEstruct_C, berr_C, &stat_C, &info);
 
-        // printf("proc %d on C is here.\n", grid_C->iam);
-        // fflush(stdout);
+        printf("proc %d on C is here.\n", grid_C->iam);
+        fflush(stdout);
 
         Destroy_CompRowLoc_Matrix_dist(&C);
         dScalePermstructFree(&ScalePermstruct_C);
@@ -1793,10 +1793,10 @@ void fadi_ttsvd_3d_2grids_1core(superlu_dist_options_t options, int_t m_A, int_t
         }
         colptr_C_neg[m_C] = colptr_C[m_C];
 
-        if (grid2->iam == 0) {
-            printf("Get neg matrix.\n");
-            fflush(stdout);
-        }
+        // if (grid2->iam == 0) {
+        //     printf("Get neg matrix.\n");
+        //     fflush(stdout);
+        // }
 
         MPI_Barrier(grid2->comm);
     }
