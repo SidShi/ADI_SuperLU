@@ -115,6 +115,146 @@ void dread_matrix(FILE *fp, char * postfix, gridinfo_t *grid, int_t *m, int_t *n
     }
 }
 
+void dread_matrix_twogrids(FILE *fp, char *postfix, gridinfo_t *grid1, gridinfo_t *grid2, int_t *m, int_t *n, 
+    int_t *nnz, double **nzval, int_t **rowind, int_t **colptr)
+{
+    int_t i;
+    int_t chunk= 2000000000;
+    int count;
+    int_t Nchunk;
+    int_t remainder;
+    int iam1 = grid1->iam;
+    int iam2 = grid2->iam;
+    int root2 = grid1->nprow*grid1->npcol;
+    int_t intinfo[5];
+
+    if ( !iam1 ) {
+        double t = SuperLU_timer_(); 
+
+        if(!strcmp(postfix,"rua")){
+            /* Read the matrix stored on disk in Harwell-Boeing format. */
+            dreadhb_dist(iam1, fp, m, n, nnz, nzval, rowind, colptr);
+        }else if(!strcmp(postfix,"mtx")){
+            /* Read the matrix stored on disk in Matrix Market format. */
+            dreadMM_dist(fp, m, n, nnz, nzval, rowind, colptr);
+        }else if(!strcmp(postfix,"rb")){
+            /* Read the matrix stored on disk in Rutherford-Boeing format. */
+            dreadrb_dist(iam1, fp, m, n, nnz, nzval, rowind, colptr);      
+        }else if(!strcmp(postfix,"dat")){
+            /* Read the matrix stored on disk in triplet format. */
+            dreadtriple_dist(fp, m, n, nnz, nzval, rowind, colptr);
+        }else if(!strcmp(postfix,"datnh")){
+            /* Read the matrix stored on disk in triplet format (without header). */
+            dreadtriple_noheader(fp, m, n, nnz, nzval, rowind, colptr);       
+        }else if(!strcmp(postfix,"bin")){
+            /* Read the matrix stored on disk in binary format. */
+            dread_binary(fp, m, n, nnz, nzval, rowind, colptr);       
+        }else {
+            ABORT("File format not known");
+        }
+
+        printf("Time to read and distribute matrix %.2f\n", 
+                SuperLU_timer_() - t);  fflush(stdout);
+                
+        /* Broadcast matrix A to the other PEs. */
+        MPI_Bcast( m,     1,   mpi_int_t,  0, grid1->comm );
+        MPI_Bcast( n,     1,   mpi_int_t,  0, grid1->comm );
+        MPI_Bcast( nnz,   1,   mpi_int_t,  0, grid1->comm );
+
+        
+        Nchunk = CEILING(*nnz,chunk);
+        remainder =  (*nnz)%chunk;
+        MPI_Bcast( &Nchunk,   1,   mpi_int_t,  0, grid1->comm );
+        MPI_Bcast( &remainder,   1,   mpi_int_t,  0, grid1->comm );
+
+        for (i = 0; i < Nchunk; ++i) {
+           int_t idx=i*chunk;
+           if(i==Nchunk-1){
+                count=remainder;
+           }else{
+                count=chunk;
+           }  
+            MPI_Bcast( nzval[idx],  count, MPI_DOUBLE, 0, grid1->comm );
+            MPI_Bcast( rowind[idx], count, mpi_int_t,  0, grid1->comm );       
+        }
+        MPI_Bcast( *colptr, (*n)+1, mpi_int_t,  0, grid1->comm );
+
+        intinfo[0] = *m; intinfo[1] = *n; intinfo[2] = *nnz; intinfo[3] = Nchunk; intinfo[4] = remainder;
+    } 
+    else if (iam1 != -1) {
+        /* Receive matrix A from PE 0. */
+        MPI_Bcast( m,   1,   mpi_int_t,  0, grid1->comm );
+        MPI_Bcast( n,   1,   mpi_int_t,  0, grid1->comm );
+        MPI_Bcast( nnz, 1,   mpi_int_t,  0, grid1->comm );
+        MPI_Bcast( &Nchunk,   1,   mpi_int_t,  0, grid1->comm );
+        MPI_Bcast( &remainder,   1,   mpi_int_t,  0, grid1->comm );
+
+
+        /* Allocate storage for compressed column representation. */
+        dallocateA_dist(*n, *nnz, nzval, rowind, colptr);
+
+        for (i = 0; i < Nchunk; ++i) {
+           int_t idx=i*chunk;
+           if(i==Nchunk-1){
+                count=remainder;
+           }else{
+                count=chunk;
+           }  
+            MPI_Bcast( nzval[idx],  count, MPI_DOUBLE, 0, grid1->comm );
+            MPI_Bcast( rowind[idx], count, mpi_int_t,  0, grid1->comm );       
+        }
+        MPI_Bcast( *colptr,  (*n)+1, mpi_int_t,  0, grid1->comm );
+    }
+
+    if (!iam1) {
+        MPI_Send(intinfo, 5, mpi_int_t, root2, 0, MPI_COMM_WORLD);
+    }
+    else if (!iam2) {
+        MPI_Recv(intinfo, 5, mpi_int_t, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+    if (iam2 != -1) {
+        MPI_Bcast(intinfo, 5, mpi_int_t, 0, grid2->comm);
+        *m = intinfo[0]; *n = intinfo[1]; *nnz = intinfo[2]; Nchunk = intinfo[3]; remainder = intinfo[4];
+        /* Allocate storage for compressed column representation. */
+        dallocateA_dist(*n, *nnz, nzval, rowind, colptr);
+    }
+
+    for (i = 0; i < Nchunk; ++i) {
+       int_t idx=i*chunk;
+       if(i==Nchunk-1){
+            count=remainder;
+       }else{
+            count=chunk;
+       }
+
+       if (!iam1) {
+            MPI_Send(nzval[idx], count, MPI_DOUBLE, root2, 0, MPI_COMM_WORLD);
+       }
+       else if (!iam2) {
+            MPI_Recv(nzval[idx], count, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+       }
+       if (!iam1) {
+            MPI_Send(rowind[idx], count, mpi_int_t, root2, 0, MPI_COMM_WORLD);
+       }
+       else if (!iam2) {
+            MPI_Recv(rowind[idx], count, mpi_int_t, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+       }
+       if (iam2 != -1) {
+            MPI_Bcast( nzval[idx],  count, MPI_DOUBLE, 0, grid2->comm );
+            MPI_Bcast( rowind[idx], count, mpi_int_t,  0, grid2->comm );
+       }       
+    }
+    if (!iam1) {
+         MPI_Send(*colptr, (*n)+1, mpi_int_t, root2, 0, MPI_COMM_WORLD);
+    }
+    else if (!iam2) {
+         MPI_Recv(*colptr, (*n)+1, mpi_int_t, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+    if (iam2 != -1) {
+        MPI_Bcast(*colptr, (*n)+1, mpi_int_t, 0, grid2->comm);
+    }
+}
+
 void dread_shift(FILE *fp, double **p, double **q, int_t *l, gridinfo_t *grid_A, gridinfo_t *grid_B)
 {
     int_t i;
@@ -496,6 +636,45 @@ void dread_shift_multi_interval_2grids(FILE *fp, int d, double *la, double *ua, 
     }
 }
 
+void dread_shift_multi_interval_2grids_2way(FILE *fp, int d, double *la, double *ua, double *lb, double *ub, 
+    gridinfo_t *grid1, gridinfo_t *grid2, int *grid_proc)
+{
+    int_t i, j;
+    double *rla, *rua, *rlb, *rub;
+    int len = 2*(d-2);
+
+    if (grid1->iam == 0) {
+        for (i = 0; i < len; ++i) {
+            fscanf(fp, "%lf%lf%lf%lf\n", &(la[i]), &(ua[i]), &(lb[i]), &(ub[i]));
+        }
+    }
+
+    if (grid2->iam == 0) {
+        rla = (double *) doubleMalloc_dist(len);
+        rua = (double *) doubleMalloc_dist(len);
+        rlb = (double *) doubleMalloc_dist(len);
+        rub = (double *) doubleMalloc_dist(len);
+    }
+    transfer_X_dgrids(la, len, 1, rla, grid_proc, 0, 1);
+    transfer_X_dgrids(ua, len, 1, rua, grid_proc, 0, 1);
+    transfer_X_dgrids(lb, len, 1, rlb, grid_proc, 0, 1);
+    transfer_X_dgrids(ub, len, 1, rub, grid_proc, 0, 1);
+
+    if (grid2->iam == 0) {
+        for (i = 0; i < len; ++i) {
+            la[i] = rla[i];
+            ua[i] = rua[i];
+            lb[i] = rlb[i];
+            ub[i] = rub[i];
+        }
+
+        SUPERLU_FREE(rla);
+        SUPERLU_FREE(rua);
+        SUPERLU_FREE(rlb);
+        SUPERLU_FREE(rub);
+    }
+}
+
 void dread_shift_interval_multigrids(FILE *fp, int d, double *la, double *ua, double *lb, double *ub, gridinfo_t **grids, int *grid_proc)
 {
     int_t i, j;
@@ -570,6 +749,45 @@ void dread_X(FILE *fp, double **X, gridinfo_t *grid)
         for (i = 0; i < m*n; ++i) {
             fscanf(fp, "%lf\n", &((*X)[i]));
         }
+    }
+}
+
+void dread_X_twogrids(FILE *fp, double **X, gridinfo_t *grid1, gridinfo_t *grid2, int *grid_proc)
+{
+    int_t i, j;
+    int m, n, mn;
+    int iam1 = grid1->iam;
+    int iam2 = grid2->iam;
+    int root2 = grid1->nprow * grid1->npcol;
+    double *rX;
+
+    if (iam1 == 0) {
+        fscanf(fp, "%d\n", &m);
+        fscanf(fp, "%d\n", &n);
+        mn = m*n;
+
+        (*X) = (double *) doubleMalloc_dist(mn);
+        for (i = 0; i < mn; ++i) {
+            fscanf(fp, "%lf\n", &((*X)[i]));
+        }
+    }
+
+    if (!iam1) {
+        MPI_Send(&mn, 1, MPI_INT, root2, 0, MPI_COMM_WORLD);
+    }
+    else if (!iam2) {
+        MPI_Recv(&mn, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        if ( !(rX = doubleMalloc_dist(mn)) )
+            ABORT("Malloc fails for rX[]");
+    }
+    transfer_X_dgrids(*X, mn, 1, rX, grid_proc, 0, 1);
+    if (iam2 == 0) {
+        (*X) = (double *) doubleMalloc_dist(mn);
+        for (j = 0; j < mn; ++j) {
+            (*X)[j] = rX[j];
+        }
+        
+        SUPERLU_FREE(rX);
     }
 }
 

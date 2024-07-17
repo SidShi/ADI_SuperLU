@@ -4,6 +4,9 @@
 void dread_matrix(FILE *fp, char *postfix, gridinfo_t *grid, int_t *m, int_t *n, 
     int_t *nnz, double **nzval, int_t **rowind, int_t **colptr);
 
+void dread_matrix_twogrids(FILE *fp, char *postfix, gridinfo_t *grid1, gridinfo_t *grid2, int_t *m, int_t *n, 
+    int_t *nnz, double **nzval, int_t **rowind, int_t **colptr);
+
 void dread_shift(FILE *fp, double **p, double **q, int_t *l, gridinfo_t *grid_A, gridinfo_t *grid_B);
 
 void dread_shift_onegrid(FILE *fp, double **p, double **q, int_t *l, gridinfo_t *grid);
@@ -19,6 +22,9 @@ void dread_shift_interval_twogrids(FILE *fp, double *a, double *b, double *c, do
     int grA, int grB, int *grid_proc);
 
 void dread_shift_multi_interval_2grids(FILE *fp, int d, double *la, double *ua, double *lb, double *ub, 
+    gridinfo_t *grid1, gridinfo_t *grid2, int *grid_proc);
+
+void dread_shift_multi_interval_2grids_2way(FILE *fp, int d, double *la, double *ua, double *lb, double *ub, 
     gridinfo_t *grid1, gridinfo_t *grid2, int *grid_proc);
 
 void dread_shift_interval_multigrids(FILE *fp, int d, double *la, double *ua, double *lb, double *ub, gridinfo_t **grids, int *grid_proc);
@@ -41,3 +47,5 @@ void dread_RHS_factor_twodim(FILE *fp, double **F, gridinfo_t *grid, int_t m_A, 
 void dread_RHS_factor_multidim(FILE *fp, double **F, gridinfo_t *grid, int_t *ms, int ddeal, int *local, double **F_global);
 
 void dread_X(FILE *fp, double **X, gridinfo_t *grid);
+
+void dread_X_twogrids(FILE *fp, double **X, gridinfo_t *grid1, gridinfo_t *grid2, int *grid_proc);

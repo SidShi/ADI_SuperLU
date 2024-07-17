@@ -71,9 +71,14 @@ void dgather_TTcores(double **TTcores, gridinfo_t **grids, int *ms, int *rs, int
 
 void dgather_TTcores_2grids(double **TTcores, gridinfo_t *grid1, gridinfo_t *grid2, int *ms, int *rs, int *locals, int d, double **TTcores_global);
 
+void dgather_TTcores_2grids_alt(double **TTcores, gridinfo_t *grid1, gridinfo_t *grid2, int *ms, int *rs, int *locals, int d, double **TTcores_global);
+
 void dconvertTT_tensor(double **TTcores_global, gridinfo_t **grids, int *ms, int *rs, int *locals, int d, double *X, int *grid_proc);
 
 void dconvertTT_tensor_2grids(double **TTcores_global, gridinfo_t *grid1, gridinfo_t *grid2, int *ms, int *rs, int *locals, 
+    int d, double *X, int *grid_proc);
+
+void dconvertTT_tensor_2grids_alt(double **TTcores_global, gridinfo_t *grid1, gridinfo_t *grid2, int *ms, int *rs, int *locals, 
     int d, double *X, int *grid_proc);
 
 void dcheck_error_TT(int_t *ms, int_t *nnzs, double **nzvals, int_t **rowinds, int_t **colptrs, gridinfo_t **grids,
@@ -81,6 +86,12 @@ void dcheck_error_TT(int_t *ms, int_t *nnzs, double **nzvals, int_t **rowinds, i
 
 void dcheck_error_TT_2grids(int_t *ms, int_t *nnzs, double **nzvals, int_t **rowinds, int_t **colptrs, gridinfo_t *grid1, gridinfo_t *grid2,
     int *rs, int *locals, int d, double *F, double **TTcores, double *trueX, int *grid_proc);
+
+void dcheck_error_TT_2grids_alt(int_t *ms, int_t *nnzs, double **nzvals, int_t **rowinds, int_t **colptrs, gridinfo_t *grid1, gridinfo_t *grid2,
+    int *rs, int *locals, int d, double *F, double **TTcores, double *trueX, int *grid_proc);
+
+void dcheck_error_TT_2grids_comb(int_t *ms, int_t *nnzs, double **nzvals, int_t **rowinds, int_t **colptrs, gridinfo_t *grid1, gridinfo_t *grid2,
+    int *rs, int *locals, int d, double *F, double **TTcores, double *trueX, int *grid_proc, int grid_main);
 
 void dredistribute_X_twogrids(double *X, double *F, double *F_transpose, gridinfo_t *grid_A, gridinfo_t *grid_B, 
     int_t m_A, int_t m_B, int_t r, int *grid_proc, int send_grid, int recv_grid);
@@ -93,3 +104,6 @@ void dmult_TTfADI_mat(int_t m_A, double *A, int_t m_B, int_t nnz_B, double *nzva
     double *U, int r, double *X);
 
 void dmult_TTfADI_RHS(int_t *ms, int_t *rs, int_t local, int ddeal, double *M, int nrhs, double **TTcores_global, double **newM);
+
+void dtranspose_TTcores(int_t *ms_R2L, int_t *ms_L2R, int_t *rs_R2L, int_t *rs_L2R, int_t *locals_R2L, int_t *locals_L2R, 
+    int d, double **TTcores_R2L, double **TTcores_L2R, gridinfo_t *grid1, gridinfo_t *grid2);
