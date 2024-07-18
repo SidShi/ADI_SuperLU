@@ -1857,7 +1857,7 @@ void fadi_ttsvd_3d_2grids_test(superlu_dist_options_t options, int_t m_A, int_t 
 {
     double *nzval_A_dup;
     int_t  *rowind_A_dup, *colptr_A_dup;
-    int rr1, rr2, ldlu2 = ldu2/m_A;
+    int ldlu2 = ldu2/m_A;
     int ldnewu2 = ldlu2*r2;
     double one = 1.0, zero = 0.0;
     char     transpose[1];
@@ -1875,14 +1875,24 @@ void fadi_ttsvd_3d_2grids_test(superlu_dist_options_t options, int_t m_A, int_t 
         }
         colptr_A_dup[m_A] = colptr_A[m_A];
 
-        fadi_col(options, m_A, nnz_A, nzval_A_dup, rowind_A_dup, colptr_A_dup, grid1, U1, ldu1, p1, q1, l1, tol, T1, r1, &rr1);
+        fadi_col(options, m_A, nnz_A, nzval_A_dup, rowind_A_dup, colptr_A_dup, grid1, U1, ldu1, p1, q1, l1, tol, T1, r1, rank1);
 
         MPI_Barrier(grid1->comm);
     }
 
+    if (grid1->iam == 0) {
+        MPI_Send(rank1, 1, MPI_INT, grid1->nprow*grid1->npcol, 0, MPI_COMM_WORLD);
+    }
+    else if (grid2->iam == 0) {
+        MPI_Recv(rank1, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+    if (grid2->iam != -1) {
+        MPI_Bcast(rank1, 1, MPI_INT, 0, grid2->comm);
+    }
+
     fadi_ttsvd_3d_2grids_1core(options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, m_B, nnz_B, nzval_B, rowind_B, colptr_B,
         m_C, nnz_C, nzval_C, rowind_C, colptr_C, grid1, grid2, ldu1, U2, ldu2, V2, ldv2,
-        p2, q2, l2, tol, la, ua, lb, ub, *T1, T2, T3, r2, rr1, &rr2, grid_proc, 0, 1);
+        p2, q2, l2, tol, la, ua, lb, ub, *T1, T2, T3, r2, *rank1, rank2, grid_proc, 0, 1);
 }
 
 void fadi_ttsvd_3d_2grids_rep(superlu_dist_options_t options, int_t m_A, int_t nnz_A, double *nzval_A, int_t *rowind_A, int_t *colptr_A,
