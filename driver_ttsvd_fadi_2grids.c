@@ -550,7 +550,7 @@ int main(int argc, char *argv[])
     double* TTcores[3];
     // fadi_ttsvd_3d_2grids(options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, m_B, nnz_B, nzval_B, rowind_B, colptr_B,
     //     m_C, nnz_C, nzval_C, rowind_C, colptr_C, &grid1, &grid2, U1, ldu1, U2, ldu2, V2, ldv2,
-    //     pp1, qq1, ll1, pp2, qq2, ll2, tol, la, ua, lb, ub, &(TTcores[0]), &(TTcores[1]), &(TTcores[2]), r1, r2, &rank1, &rank2, grid_proc);
+    //     pp1, qq1, ll1, pp2, qq2, ll2, tol, la, ua, lb, ub, &(TTcores[0]), &(TTcores[1]), &(TTcores[2]), r1, r2, &rank1, &rank2, grid_proc, 0, 1);
     fadi_ttsvd_3d_2grids_test(options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, m_B, nnz_B, nzval_B, rowind_B, colptr_B,
         m_C, nnz_C, nzval_C, rowind_C, colptr_C, &grid1, &grid2, U1, ldu1, U2, ldu2, V2, ldv2,
         pp1, qq1, ll1, pp2, qq2, ll2, tol, la, ua, lb, ub, &(TTcores[0]), &(TTcores[1]), &(TTcores[2]), r1, r2, &rank1, &rank2, grid_proc);

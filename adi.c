@@ -1603,7 +1603,7 @@ void fadi_ttsvd_3d_2grids(superlu_dist_options_t options, int_t m_A, int_t nnz_A
     int_t m_C, int_t nnz_C, double *nzval_C, int_t *rowind_C, int_t *colptr_C,
     gridinfo_t *grid1, gridinfo_t *grid2, double *U1, int ldu1, double *U2, int ldu2, double *V2, int ldv2,
     double *p1, double *q1, int_t l1, double *p2, double *q2, int_t l2, double tol, double la, double ua, double lb, double ub,
-    double **T1, double **T2, double **T3, int r1, int r2, int *rank1, int *rank2, int *grid_proc)
+    double **T1, double **T2, double **T3, int r1, int r2, int *rank1, int *rank2, int *grid_proc, int gr1, int gr2)
 {
     SuperMatrix GA;
     double *newA, *tmpA, *newU2;
@@ -1707,7 +1707,7 @@ void fadi_ttsvd_3d_2grids(superlu_dist_options_t options, int_t m_A, int_t nnz_A
     if ((grid1->iam != -1) || (grid2->iam != -1)) {
         fadi_sp(options, rr1, newA, m_B, nnz_B, nzval_B_neg, rowind_B_neg, colptr_B_neg, 
             m_C, nnz_C, nzval_C_neg, rowind_C_neg, colptr_C_neg, grid1, grid2, 
-            newU2, rr1*ldlu2, V2, ldv2, p2, q2, l2, tol, T2, T3, r2, rank2, la, ua, lb, ub, grid_proc, 0, 1);
+            newU2, rr1*ldlu2, V2, ldv2, p2, q2, l2, tol, T2, T3, r2, rank2, la, ua, lb, ub, grid_proc, gr1, gr2);
 
         if (grid1->iam == 0) {
             printf("Grids finish fadi_sp!\n");
@@ -1895,6 +1895,82 @@ void fadi_ttsvd_3d_2grids_test(superlu_dist_options_t options, int_t m_A, int_t 
         p2, q2, l2, tol, la, ua, lb, ub, *T1, T2, T3, r2, *rank1, rank2, grid_proc, 0, 1);
 }
 
+void fadi_ttsvd_3d_2grids_test2(superlu_dist_options_t options, int_t m_A, int_t nnz_A, double *nzval_A, int_t *rowind_A, int_t *colptr_A,
+    int_t m_B, int_t nnz_B, double *nzval_B, int_t *rowind_B, int_t *colptr_B,
+    int_t m_C, int_t nnz_C, double *nzval_C, int_t *rowind_C, int_t *colptr_C,
+    gridinfo_t *grid1, gridinfo_t *grid2, double *U1, int ldu1, double *V1, int ldv1, double *U2, int ldu2, double *V2, int ldv2,
+    double *p1, double *q1, int_t l1, double *p2, double *q2, int_t l2, double tol, double la, double ua, double lb, double ub, double lc, double uc,
+    double **T1, double **T2, double **T3, int r1, int r2, int *rank1, int *rank2, int *grid_proc)
+{
+    double *rT1, *rT2, *rT3;
+    double *p1_neg, *q1_neg, *p2_neg, *q2_neg;
+    int_t i, j, k;
+    int rr1, rr2, ldlu2 = ldv1/m_C;
+
+    if ( !(p1_neg = doubleMalloc_dist(l1)) )
+        ABORT("Malloc fails for p1_neg[].");
+    if ( !(q1_neg = doubleMalloc_dist(l1)) )
+        ABORT("Malloc fails for q1_neg[].");
+    for (j = 0; j < l1; ++j) {
+        p1_neg[j] = -p1[j];
+        q1_neg[j] = -q1[j];
+    }
+    if ( !(p2_neg = doubleMalloc_dist(l2)) )
+        ABORT("Malloc fails for p2_neg[].");
+    if ( !(q2_neg = doubleMalloc_dist(l2)) )
+        ABORT("Malloc fails for q2_neg[].");
+    for (j = 0; j < l2; ++j) {
+        p2_neg[j] = -p2[j];
+        q2_neg[j] = -q2[j];
+    }
+
+    fadi_ttsvd_3d_2grids(options, m_C, nnz_C, nzval_C, rowind_C, colptr_C, m_B, nnz_B, nzval_B, rowind_B, colptr_B,
+        m_A, nnz_A, nzval_A, rowind_A, colptr_A, grid2, grid1, V2, ldv2, V1, ldv1, U1, ldu1, q2_neg, p2_neg, l2, q1_neg, p1_neg, l1, 
+        tol, lc, uc, lb, ub, &rT1, &rT2, &rT3, r2, r1, rank2, rank1, grid_proc, 1, 0);
+
+    rr1 = *rank1;
+    rr2 = *rank2;
+
+    if (grid1->iam != -1) {
+        if ( !(*T1 = doubleMalloc_dist(ldu1*rr1)) )
+            ABORT("Malloc fails for *T1.");
+        for (j = 0; j < rr1; ++j) {
+            for (i = 0; i < ldu1; ++i) {
+                (*T1)[j*ldu1+i] = rT3[i*rr1+j];
+            }
+        }
+
+        SUPERLU_FREE(rT3);
+    }
+    if (grid2->iam != -1) {
+        if ( !(*T2 = doubleMalloc_dist(rr1*ldlu2*rr2)) )
+            ABORT("Malloc fails for *T2.");
+        for (k = 0; k < ldlu2; ++k) {
+            for (j = 0; j < rr2; ++j) {
+                for (i = 0; i < rr1; ++i) {
+                    (*T2)[j*ldlu2*rr1+k*rr1+i] = rT2[i*ldlu2*rr2+k*rr2+j];
+                }
+            }
+        }
+
+        if ( !(*T3 = doubleMalloc_dist(ldv2*rr2)) )
+            ABORT("Malloc fails for *T3.");
+        for (j = 0; j < ldv2; ++j) {
+            for (i = 0; i < rr2; ++i) {
+                (*T3)[j*rr2+i] = rT1[i*ldv2+j];
+            }
+        }
+
+        SUPERLU_FREE(rT2);
+        SUPERLU_FREE(rT1);
+    }
+
+    SUPERLU_FREE(p1_neg);
+    SUPERLU_FREE(q1_neg);
+    SUPERLU_FREE(p2_neg);
+    SUPERLU_FREE(q2_neg);
+}
+
 void fadi_ttsvd_3d_2grids_rep(superlu_dist_options_t options, int_t m_A, int_t nnz_A, double *nzval_A, int_t *rowind_A, int_t *colptr_A,
     int_t m_B, int_t nnz_B, double *nzval_B, int_t *rowind_B, int_t *colptr_B,
     int_t m_C, int_t nnz_C, double *nzval_C, int_t *rowind_C, int_t *colptr_C,
@@ -1905,7 +1981,7 @@ void fadi_ttsvd_3d_2grids_rep(superlu_dist_options_t options, int_t m_A, int_t n
     if (rep == 0) {
         fadi_ttsvd_3d_2grids(options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, m_B, nnz_B, nzval_B, rowind_B, colptr_B,
             m_C, nnz_C, nzval_C, rowind_C, colptr_C, grid1, grid2, U1, ldu1, U2, ldu2, V2, ldv2, p1, q1, l1, p2, q2, l2, 
-            tol, la, ua, lb, ub, T1, T2, T3, r1, r2, rank1, rank2, grid_proc);
+            tol, la, ua, lb, ub, T1, T2, T3, r1, r2, rank1, rank2, grid_proc, 0, 1);
         *grid_main = 0;
         return;
     }
@@ -1927,7 +2003,7 @@ void fadi_ttsvd_3d_2grids_rep(superlu_dist_options_t options, int_t m_A, int_t n
 
     fadi_ttsvd_3d_2grids(options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, m_B, nnz_B, nzval_B, rowind_B, colptr_B,
         m_C, nnz_C, nzval_C, rowind_C, colptr_C, grid1, grid2, U1, ldu1, U2, ldu2, V2, ldv2, p1, q1, l1, p2, q2, l2, 
-        tol, la, ua, lb, ub, &(TTcores_old[0]), &(TTcores_old[1]), &(TTcores_old[2]), r1, r2, &rr1, &rr2, grid_proc);
+        tol, la, ua, lb, ub, &(TTcores_old[0]), &(TTcores_old[1]), &(TTcores_old[2]), r1, r2, &rr1, &rr2, grid_proc, 0, 1);
 
     if (grid1->iam == 0) {
         printf("Finish with basic solve.\n");
@@ -2117,7 +2193,7 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
         fadi_ttsvd_3d_2grids(options, ms[0], nnzs[0], nzvals[0], rowinds[0], colptrs[0], ms[1], nnzs[1], nzvals[1], rowinds[1], colptrs[1],
             ms[2], nnzs[2], nzvals[2], rowinds[2], colptrs[2], grid1, grid2, Us[0], locals[0], Us[1], ms[0]*locals[1], 
             V, locals[2], ps[0], qs[0], ls[0], ps[1], qs[1], ls[1], tol, las[0], uas[0], lbs[0], ubs[0], &(TTcores[0]), &(TTcores[1]), 
-            &(TTcores[2]), nrhss[0], nrhss[1], &(rs[0]), &(rs[1]), grid_proc);
+            &(TTcores[2]), nrhss[0], nrhss[1], &(rs[0]), &(rs[1]), grid_proc, 0, 1);
         return;
     }
 
