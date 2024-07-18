@@ -1859,6 +1859,7 @@ void fadi_ttsvd_3d_2grids_rep(superlu_dist_options_t options, int_t m_A, int_t n
         fadi_ttsvd_3d_2grids(options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, m_B, nnz_B, nzval_B, rowind_B, colptr_B,
             m_C, nnz_C, nzval_C, rowind_C, colptr_C, grid1, grid2, U1, ldu1, U2, ldu2, V2, ldv2, p1, q1, l1, p2, q2, l2, 
             tol, la, ua, lb, ub, T1, T2, T3, r1, r2, rank1, rank2, grid_proc);
+        *grid_main = 0;
         return;
     }
 
