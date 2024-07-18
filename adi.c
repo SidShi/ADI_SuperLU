@@ -1615,8 +1615,7 @@ void fadi_ttsvd_3d_2grids(superlu_dist_options_t options, int_t m_A, int_t nnz_A
     double one = 1.0, zero = 0.0;
     char     transpose[1];
     *transpose = 'N';
-    int global_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
+    int root1 = 0, root2 = 0;
     int_t i, j;
 
     if (grid1->iam != -1) {
@@ -1678,11 +1677,18 @@ void fadi_ttsvd_3d_2grids(superlu_dist_options_t options, int_t m_A, int_t nnz_A
         MPI_Barrier(grid1->comm);
     }
 
+    for (j = 0; j < gr1; ++j) {
+        root1 += grid_proc[j];
+    }
+    for (j = 0; j < gr2; ++j) {
+        root2 += grid_proc[j];
+    }
+
     if (grid1->iam == 0) {
-        MPI_Send(rank1, 1, MPI_INT, grid1->nprow*grid1->npcol, 0, MPI_COMM_WORLD);
+        MPI_Send(rank1, 1, MPI_INT, root2, 0, MPI_COMM_WORLD);
     }
     else if (grid2->iam == 0) {
-        MPI_Recv(rank1, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(rank1, 1, MPI_INT, root1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
     if (grid2->iam != -1) {
         MPI_Bcast(rank1, 1, MPI_INT, 0, grid2->comm);
