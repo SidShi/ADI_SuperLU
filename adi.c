@@ -1608,8 +1608,8 @@ void fadi_ttsvd_3d_2grids(superlu_dist_options_t options, int_t m_A, int_t nnz_A
     SuperMatrix GA;
     double *newA, *tmpA, *newU2;
     double *global_T1;
-    double *nzval_B_neg, *nzval_C_neg;
-    int_t  *rowind_B_neg, *colptr_B_neg, *rowind_C_neg, *colptr_C_neg;
+    double *nzval_A_dup, *nzval_B_neg, *nzval_C_neg;
+    int_t  *rowind_A_dup, *colptr_A_dup, *rowind_B_neg, *colptr_B_neg, *rowind_C_neg, *colptr_C_neg;
     int rr1, rr2, ldlu2 = ldu2/m_A;
     int ldnewu2 = ldlu2*r2;
     double one = 1.0, zero = 0.0;
@@ -1620,7 +1620,17 @@ void fadi_ttsvd_3d_2grids(superlu_dist_options_t options, int_t m_A, int_t nnz_A
     int_t i, j;
 
     if (grid1->iam != -1) {
-        fadi_col(options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, grid1, U1, ldu1, p1, q1, l1, tol, T1, r1, &rr1);
+        dallocateA_dist(m_A, nnz_A, &nzval_A_dup, &rowind_A_dup, &colptr_A_dup);
+        for (i = 0; i < m_A; ++i) {
+            for (j = colptr_A[i]; j < colptr_A[i+1]; ++j) {
+                nzval_A_dup[j] = nzval_A[j];
+                rowind_A_dup[j] = rowind_A[j];
+            }
+            colptr_A_dup[i] = colptr_A[i];
+        }
+        colptr_A_dup[m_A] = colptr_A[m_A];
+
+        fadi_col(options, m_A, nnz_A, nzval_A_dup, rowind_A_dup, colptr_A_dup, grid1, U1, ldu1, p1, q1, l1, tol, T1, r1, &rr1);
 
         if ( !(global_T1 = doubleMalloc_dist(m_A*rr1)) )
             ABORT("Malloc fails for global_T1[].");
@@ -1639,7 +1649,7 @@ void fadi_ttsvd_3d_2grids(superlu_dist_options_t options, int_t m_A, int_t nnz_A
 
         if (grid1->iam == 0) {
             /* Create compressed column matrix for GA. */
-            dCreate_CompCol_Matrix_dist(&GA, m_A, m_A, nnz_A, nzval_A, rowind_A, colptr_A,
+            dCreate_CompCol_Matrix_dist(&GA, m_A, m_A, nnz_A, nzval_A_dup, rowind_A_dup, colptr_A_dup,
                 SLU_NC, SLU_D, SLU_GE);
             sp_dgemm_dist(transpose, rr1, one, &GA, global_T1, m_A, zero, tmpA, m_A);
             /* Destroy GA */
@@ -1731,8 +1741,8 @@ void fadi_ttsvd_3d_2grids_1core(superlu_dist_options_t options, int_t m_A, int_t
     SuperMatrix GA;
     double *newA, *tmpA, *newU2;
     double *global_T1;
-    double *nzval_B_neg, *nzval_C_neg;
-    int_t  *rowind_B_neg, *colptr_B_neg, *rowind_C_neg, *colptr_C_neg;
+    double *nzval_A_dup, *nzval_B_neg, *nzval_C_neg;
+    int_t  *rowind_A_dup, *colptr_A_dup, *rowind_B_neg, *colptr_B_neg, *rowind_C_neg, *colptr_C_neg;
     int rr2, ldlu2 = ldu2/m_A;
     int ldnewu2 = ldlu2*r2;
     double one = 1.0, zero = 0.0;
@@ -1741,6 +1751,16 @@ void fadi_ttsvd_3d_2grids_1core(superlu_dist_options_t options, int_t m_A, int_t
     int_t i, j;
 
     if (grid1->iam != -1) {
+        dallocateA_dist(m_A, nnz_A, &nzval_A_dup, &rowind_A_dup, &colptr_A_dup);
+        for (i = 0; i < m_A; ++i) {
+            for (j = colptr_A[i]; j < colptr_A[i+1]; ++j) {
+                nzval_A_dup[j] = nzval_A[j];
+                rowind_A_dup[j] = rowind_A[j];
+            }
+            colptr_A_dup[i] = colptr_A[i];
+        }
+        colptr_A_dup[m_A] = colptr_A[m_A];
+
         if ( !(global_T1 = doubleMalloc_dist(m_A*rank1)) )
             ABORT("Malloc fails for global_T1[].");
         if ( !(newA = doubleMalloc_dist(rank1*rank1)) )
@@ -1755,7 +1775,7 @@ void fadi_ttsvd_3d_2grids_1core(superlu_dist_options_t options, int_t m_A, int_t
 
         if (grid1->iam == 0) {
             /* Create compressed column matrix for GA. */
-            dCreate_CompCol_Matrix_dist(&GA, m_A, m_A, nnz_A, nzval_A, rowind_A, colptr_A,
+            dCreate_CompCol_Matrix_dist(&GA, m_A, m_A, nnz_A, nzval_A_dup, rowind_A_dup, colptr_A_dup,
                 SLU_NC, SLU_D, SLU_GE);
             sp_dgemm_dist(transpose, rank1, one, &GA, global_T1, m_A, zero, tmpA, m_A);
             /* Destroy GA */
