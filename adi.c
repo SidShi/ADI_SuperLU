@@ -1848,6 +1848,43 @@ void fadi_ttsvd_3d_2grids_1core(superlu_dist_options_t options, int_t m_A, int_t
     }
 }
 
+void fadi_ttsvd_3d_2grids_test(superlu_dist_options_t options, int_t m_A, int_t nnz_A, double *nzval_A, int_t *rowind_A, int_t *colptr_A,
+    int_t m_B, int_t nnz_B, double *nzval_B, int_t *rowind_B, int_t *colptr_B,
+    int_t m_C, int_t nnz_C, double *nzval_C, int_t *rowind_C, int_t *colptr_C,
+    gridinfo_t *grid1, gridinfo_t *grid2, double *U1, int ldu1, double *U2, int ldu2, double *V2, int ldv2,
+    double *p1, double *q1, int_t l1, double *p2, double *q2, int_t l2, double tol, double la, double ua, double lb, double ub,
+    double **T1, double **T2, double **T3, int r1, int r2, int *rank1, int *rank2, int *grid_proc)
+{
+    double *nzval_A_dup;
+    int_t  *rowind_A_dup, *colptr_A_dup;
+    int rr1, rr2, ldlu2 = ldu2/m_A;
+    int ldnewu2 = ldlu2*r2;
+    double one = 1.0, zero = 0.0;
+    char     transpose[1];
+    *transpose = 'N';
+    int_t i, j;
+
+    if (grid1->iam != -1) {
+        dallocateA_dist(m_A, nnz_A, &nzval_A_dup, &rowind_A_dup, &colptr_A_dup);
+        for (i = 0; i < m_A; ++i) {
+            for (j = colptr_A[i]; j < colptr_A[i+1]; ++j) {
+                nzval_A_dup[j] = nzval_A[j];
+                rowind_A_dup[j] = rowind_A[j];
+            }
+            colptr_A_dup[i] = colptr_A[i];
+        }
+        colptr_A_dup[m_A] = colptr_A[m_A];
+
+        fadi_col(options, m_A, nnz_A, nzval_A_dup, rowind_A_dup, colptr_A_dup, grid1, U1, ldu1, p1, q1, l1, tol, T1, r1, &rr1);
+
+        MPI_Barrier(grid1->comm);
+    }
+
+    fadi_ttsvd_3d_2grids_1core(options, m_A, nnz_A, nzval_A, rowind_A, colptr_A, m_B, nnz_B, nzval_B, rowind_B, colptr_B,
+        m_C, nnz_C, nzval_C, rowind_C, colptr_C, grid1, grid2, ldu1, U2, ldu2, V2, ldv2,
+        p2, q2, l2, tol, la, ua, lb, ub, *T1, T2, T3, r2, rr1, &rr2, grid_proc, 0, 1);
+}
+
 void fadi_ttsvd_3d_2grids_rep(superlu_dist_options_t options, int_t m_A, int_t nnz_A, double *nzval_A, int_t *rowind_A, int_t *colptr_A,
     int_t m_B, int_t nnz_B, double *nzval_B, int_t *rowind_B, int_t *colptr_B,
     int_t m_C, int_t nnz_C, double *nzval_C, int_t *rowind_C, int_t *colptr_C,
