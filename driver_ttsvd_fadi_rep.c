@@ -574,7 +574,13 @@ int main(int argc, char *argv[])
        ------------------------------------------------------------*/
     
     int ranks[2]; ranks[0] = rank1; ranks[1] = rank2;
-    int locals[3]; locals[0] = ldu1; locals[1] = ldu2/m_A; locals[2] = ldv2;
+    int locals[3]; locals[0] = ldu1; locals[2] = ldv2;
+    if (grid_main == 0) {
+        locals[1] = ldu2 / m_A;
+    }
+    else if (grid_main == 1) {
+        locals[1] = ldv1 / m_C;
+    }
     dcheck_error_TT_2grids_comb(ms, nnzs, nzvals, rowinds, colptrs, &grid1, &grid2, ranks, locals, 3, 
         trueF_global, TTcores, trueX_global, grid_proc, grid_main);
     
