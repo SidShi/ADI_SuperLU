@@ -2015,7 +2015,7 @@ void fadi_ttsvd_3d_2grids_rep(superlu_dist_options_t options, int_t m_A, int_t n
     double *TTcores_old[3], *TTcores_new[3];
     int rr1, rr2;
     double *p1_neg, *q1_neg, *p2_neg, *q2_neg;
-    int ldlu2 = ldu2 / m_A;
+    int local2;
 
     if ( !(p1_neg = doubleMalloc_dist(l1)) )
         ABORT("Malloc fails for p1_neg[].");
@@ -2034,6 +2034,23 @@ void fadi_ttsvd_3d_2grids_rep(superlu_dist_options_t options, int_t m_A, int_t n
         printf("Finish with basic solve.\n");
         fflush(stdout);
     }
+
+    // if (grid1->iam != -1) {
+    //     printf("After basic solve, T1 is\n");
+    //     for (i = 0; i < ldu1; ++i) {
+    //         for (j = 0; j < rr1; ++j) {
+    //             printf("%f ", TTcores_old[0][j*ldu1+i]);
+    //         }
+    //         printf("\n");
+    //     }
+    //     printf("After basic solve, T2 is\n");
+    //     for (i = 0; i < rr1; ++i) {
+    //         for (j = 0; j < rr2; ++j) {
+    //             printf("%f ", TTcores_old[0][j*ldu1+i]);
+    //         }
+    //         printf("\n");
+    //     }
+    // }
 
     for (l = 0; l < rep; ++l) {
         if (l % 2 == 0) {
@@ -2094,15 +2111,17 @@ void fadi_ttsvd_3d_2grids_rep(superlu_dist_options_t options, int_t m_A, int_t n
     *rank2 = rr2;
     if (rep % 2 == 0) {
         if (grid1->iam != -1) {
+            local2 = ldu2 / m_A;
+
             if ( !(*T1 = doubleMalloc_dist(ldu1*rr1)) )
                 ABORT("Malloc fails for *T1.");
             for (j = 0; j < rr1*ldu1; ++j) {
                 (*T1)[j] = TTcores_old[0][j];
             }
 
-            if ( !(*T2 = doubleMalloc_dist(rr1*ldlu2*rr2)) )
+            if ( !(*T2 = doubleMalloc_dist(rr1*local2*rr2)) )
                 ABORT("Malloc fails for *T2.");
-            for (j = 0; j < rr1*ldlu2*rr2; ++j) {
+            for (j = 0; j < rr1*local2*rr2; ++j) {
                 (*T2)[j] = TTcores_old[1][j];
             }
 
@@ -2134,12 +2153,14 @@ void fadi_ttsvd_3d_2grids_rep(superlu_dist_options_t options, int_t m_A, int_t n
             SUPERLU_FREE(TTcores_new[2]);
         }
         if (grid2->iam != -1) {
-            if ( !(*T2 = doubleMalloc_dist(rr1*ldlu2*rr2)) )
+            local2 = ldv1 / m_C;
+
+            if ( !(*T2 = doubleMalloc_dist(rr1*local2*rr2)) )
                 ABORT("Malloc fails for *T2.");
-            for (k = 0; k < ldlu2; ++k) {
+            for (k = 0; k < local2; ++k) {
                 for (j = 0; j < rr2; ++j) {
                     for (i = 0; i < rr1; ++i) {
-                        (*T2)[j*ldlu2*rr1+k*rr1+i] = TTcores_new[1][i*ldlu2*rr2+k*rr2+j];
+                        (*T2)[j*local2*rr1+k*rr1+i] = TTcores_new[1][i*local2*rr2+k*rr2+j];
                     }
                 }
             }
