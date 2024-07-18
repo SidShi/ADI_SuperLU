@@ -1930,9 +1930,28 @@ void fadi_ttsvd_3d_2grids_test2(superlu_dist_options_t options, int_t m_A, int_t
         q2_neg[j] = -q2[j];
     }
 
-    fadi_ttsvd_3d_2grids(options, m_C, nnz_C, nzval_C, rowind_C, colptr_C, m_B, nnz_B, nzval_B, rowind_B, colptr_B,
-        m_A, nnz_A, nzval_A, rowind_A, colptr_A, grid2, grid1, V2, ldv2, V1, ldv1, U1, ldu1, q2_neg, p2_neg, l2, q1_neg, p1_neg, l1, 
-        tol, lc, uc, lb, ub, &rT1, &rT2, &rT3, r2, r1, rank2, rank1, grid_proc, 1, 0);
+    // fadi_ttsvd_3d_2grids(options, m_C, nnz_C, nzval_C, rowind_C, colptr_C, m_B, nnz_B, nzval_B, rowind_B, colptr_B,
+    //     m_A, nnz_A, nzval_A, rowind_A, colptr_A, grid2, grid1, V2, ldv2, V1, ldv1, U1, ldu1, q2_neg, p2_neg, l2, q1_neg, p1_neg, l1, 
+    //     tol, lc, uc, lb, ub, &rT1, &rT2, &rT3, r2, r1, rank2, rank1, grid_proc, 1, 0);
+
+    if (grid2->iam != -1) {
+        fadi_col(options, m_C, nnz_C, nzval_C, rowind_C, colptr_C, grid2, V2, ldv2, q2_neg, p2_neg, l2, tol, &rT1, r2, rank2);
+        MPI_Barrier(grid2->comm);
+    }
+
+    if (grid2->iam == 0) {
+        MPI_Send(rank2, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+    }
+    else if (grid1->iam == 0) {
+        MPI_Recv(rank2, 1, MPI_INT, grid1->nprow*grid1->npcol, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+    if (grid1->iam != -1) {
+        MPI_Bcast(rank2, 1, MPI_INT, 0, grid1->comm);
+    }
+
+    fadi_ttsvd_3d_2grids_1core(options, m_C, nnz_C, nzval_C, rowind_C, colptr_C, m_B, nnz_B, nzval_B, rowind_B, colptr_B,
+        m_A, nnz_A, nzval_A, rowind_A, colptr_A, grid2, grid1, ldv2, V1, ldv1, U1, ldu1,
+        q1_neg, p1_neg, l1, tol, lc, uc, lb, ub, rT1, &rT2, &rT3, r1, *rank2, rank1, grid_proc, 1, 0);
 
     rr1 = *rank1;
     rr2 = *rank2;
