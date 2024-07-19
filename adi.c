@@ -2652,7 +2652,7 @@ void fadi_ttsvd_rep(superlu_dist_options_t options, int d, int_t *ms, int_t *nnz
 
     fadi_ttsvd(options, d, ms, nnzs, nzvals, rowinds, colptrs, grid1, grid2, Us, Vs[0], locals1, nrhss, ps, qs, ls, tol,
             las, uas, lbs, ubs, TTcores_old, rs, grid_proc);
-    rs_rev[0] = rs[d-1];
+    rs_rev[0] = rs[d-2];
 
     if (grid1->iam == 0) {
         printf("Finish with basic solve.\n");
@@ -2680,7 +2680,7 @@ void fadi_ttsvd_rep(superlu_dist_options_t options, int d, int_t *ms, int_t *nnz
 
             fadi_ttsvd_1core(options, d, ms_rev, nnzs_rev, nzvals_rev, rowinds_rev, colptrs_rev, grid2, grid1, Vs, Us[0], locals2, 
                 nrhss_rev, qs_neg, ps_neg, ls_rev, tol, las_rev, uas_rev, lbs_rev, ubs_rev, TTcores_new, rs_rev, grid_proc, 1, 0);
-            rs[0] = rs_rev[d-1];
+            rs[0] = rs_rev[d-2];
 
             if (grid2->iam == 0) {
                 printf("Finish with rep number %d.\n", l+1);
@@ -2707,7 +2707,7 @@ void fadi_ttsvd_rep(superlu_dist_options_t options, int d, int_t *ms, int_t *nnz
 
             fadi_ttsvd_1core(options, d, ms, nnzs, nzvals, rowinds, colptrs, grid1, grid2, Us, Vs[0], locals1, 
                 nrhss, ps, qs, ls, tol, las, uas, lbs, ubs, TTcores_old, rs, grid_proc, 0, 1);
-            rs_rev[0] = rs[d-1];
+            rs_rev[0] = rs[d-2];
 
             if (grid1->iam == 0) {
                 printf("Finish with rep number %d.\n", l+1);
