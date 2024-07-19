@@ -105,5 +105,4 @@ void dmult_TTfADI_mat(int_t m_A, double *A, int_t m_B, int_t nnz_B, double *nzva
 
 void dmult_TTfADI_RHS(int_t *ms, int_t *rs, int_t local, int ddeal, double *M, int nrhs, double **TTcores_global, double **newM);
 
-void dtranspose_TTcores(int_t *ms_R2L, int_t *ms_L2R, int_t *rs_R2L, int_t *rs_L2R, int_t *locals_R2L, int_t *locals_L2R, 
-    int d, double **TTcores_R2L, double **TTcores_L2R, gridinfo_t *grid1, gridinfo_t *grid2);
+void dtranspose_TTcores(int_t *rs_R2L, int_t *rs_L2R, int_t *locals_R2L, int d, double **TTcores_R2L, double **TTcores_L2R, gridinfo_t *grid1, gridinfo_t *grid2);

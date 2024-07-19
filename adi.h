@@ -80,6 +80,14 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
     gridinfo_t *grid1, gridinfo_t *grid2, double **Us, double *V, int_t *locals, int_t *nrhss, double **ps, double **qs, int_t *ls, double tol,
     double *las, double *uas, double *lbs, double *ubs, double **TTcores, int *rs, int *grid_proc);
 
+void fadi_ttsvd_1core(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, double **nzvals, int_t **rowinds, int_t **colptrs,
+    gridinfo_t *grid1, gridinfo_t *grid2, double **Us, double *V, int_t *locals, int_t *nrhss, double **ps, double **qs, int_t *ls, double tol,
+    double *las, double *uas, double *lbs, double *ubs, double **TTcores, int *rs, int *grid_proc, int gr1, int gr2);
+
+void fadi_ttsvd_rep(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, double **nzvals, int_t **rowinds, int_t **colptrs,
+    gridinfo_t *grid1, gridinfo_t *grid2, double **Us, double **Vs, int_t *locals1, int_t *locals2, int_t *nrhss, double **ps, double **qs, int_t *ls, double tol,
+    double *las, double *uas, double *lbs, double *ubs, double **TTcores, int *rs, int *grid_proc, int rep, int *grid_main);
+
 void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_A, double *nzval_A, int_t *rowind_A, int_t *colptr_A,
     int_t m_B, int_t nnz_B, double *nzval_B, int_t *rowind_B, int_t *colptr_B,
     int_t m_C, int_t nnz_C, double *nzval_C, int_t *rowind_C, int_t *colptr_C,

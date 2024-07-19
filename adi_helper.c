@@ -4439,8 +4439,7 @@ void dmult_TTfADI_RHS(int_t *ms, int_t *rs, int_t local, int ddeal, double *M, i
     SUPERLU_FREE(tmp_mat);
 }
 
-void dtranspose_TTcores(int_t *ms_R2L, int_t *ms_L2R, int_t *rs_R2L, int_t *rs_L2R, int_t *locals_R2L, int_t *locals_L2R, 
-    int d, double **TTcores_R2L, double **TTcores_L2R, gridinfo_t *grid1, gridinfo_t *grid2)
+void dtranspose_TTcores(int_t *rs_R2L, int_t *rs_L2R, int_t *locals_R2L, int d, double **TTcores_R2L, double **TTcores_L2R, gridinfo_t *grid1, gridinfo_t *grid2)
 {
     int *aug_rs;
     char transpose[1];
@@ -4448,11 +4447,6 @@ void dtranspose_TTcores(int_t *ms_R2L, int_t *ms_L2R, int_t *rs_R2L, int_t *rs_L
     int_t i, j, k, l;
     double one = 1.0, zero = 0.0;
 
-    for (j = 0; j < d; ++j) {
-        ms_L2R[j] = ms_R2L[d-1-j];
-        locals_L2R[j] = locals_R2L[d-1-j];
-    }
-    
     if ( !(aug_rs = intMalloc_dist(d+1)) )
         ABORT("Malloc fails for aug_rs[]");
     aug_rs[0] = 1;
@@ -4463,28 +4457,32 @@ void dtranspose_TTcores(int_t *ms_R2L, int_t *ms_L2R, int_t *rs_R2L, int_t *rs_L
     aug_rs[d] = 1;
 
     if (grid1->iam != -1) {
-        if ( !(TTcores_L2R[0] = doubleMalloc_dist(locals_L2R[0]*rs_L2R[0])) )
+        if ( !(TTcores_L2R[0] = doubleMalloc_dist(locals_R2L[d-1]*rs_L2R[0])) )
             ABORT("Malloc fails for TTcores_L2R[0]");
         for (j = 0; j < rs_L2R[0]; ++j) {
-            for (i = 0; i < locals_L2R[0]; ++j) {
-                TTcores_L2R[0][j*locals_L2R[0]+i] = TTcores_R2L[d-1][i*rs_L2R[0]+j];
+            for (i = 0; i < locals_R2L[d-1]; ++j) {
+                TTcores_L2R[0][j*locals_R2L[d-1]+i] = TTcores_R2L[d-1][i*rs_L2R[0]+j];
             }
         }
+
+        SUPERLU_FREE(TTcores_R2L[d-1]);
     }
 
     if (grid2->iam != -1) {
         for (l = 0; l < d-1; ++l) {
-            if ( !(TTcores_L2R[d-1-l] = doubleMalloc_dist(aug_rs[d-1-l]*locals_L2R[d-1-l]*aug_rs[d-l])) )
+            if ( !(TTcores_L2R[d-1-l] = doubleMalloc_dist(aug_rs[d-1-l]*locals_R2L[l]*aug_rs[d-l])) )
                 ABORT("Malloc fails for TTcores_L2R[d-1-k]");
 
-            for (k = 0; k < locals_L2R[d-1-l]; ++k) {
+            for (k = 0; k < locals_R2L[l]; ++k) {
                 for (j = 0; j < aug_rs[d-l]; ++j) {
                     for (i = 0; i < aug_rs[d-1-l]; ++i) {
-                        TTcores_L2R[d-1-l][j*locals_L2R[d-1-l]*aug_rs[d-1-l]+k*aug_rs[d-1-l]+i]
-                        = TTcores_R2L[l][i*locals_L2R[d-1-l]*aug_rs[d-l]+k*aug_rs[d-l]+j];
+                        TTcores_L2R[d-1-l][j*locals_R2L[l]*aug_rs[d-1-l]+k*aug_rs[d-1-l]+i]
+                        = TTcores_R2L[l][i*locals_R2L[l]*aug_rs[d-l]+k*aug_rs[d-l]+j];
                     }
                 }
             }
+
+            SUPERLU_FREE(TTcores_R2L[l]);
         }     
     }
 

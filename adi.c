@@ -2412,6 +2412,343 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
     SUPERLU_FREE(newU);
 }
 
+void fadi_ttsvd_1core(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, double **nzvals, int_t **rowinds, int_t **colptrs,
+    gridinfo_t *grid1, gridinfo_t *grid2, double **Us, double *V, int_t *locals, int_t *nrhss, double **ps, double **qs, int_t *ls, double tol,
+    double *las, double *uas, double *lbs, double *ubs, double **TTcores, int *rs, int *grid_proc, int gr1, int gr2)
+{
+    SuperMatrix GA;
+    double *tmpA;
+    double *nzval_neg1, *nzval_neg2, *nzval_dup;
+    int_t  *rowind_neg1, *colptr_neg1, *rowind_neg2, *colptr_neg2, *rowind_dup, *colptr_dup;
+    double **TTcores_global, **newA, **newU;
+    int rr1;
+    double one = 1.0, zero = 0.0;
+    char transpose[1];
+    *transpose = 'N';
+    int_t i, j, k;
+    int root1 = 0, root2 = 0;
+
+    for (j = 0; j < gr1; ++j) {
+        root1 += grid_proc[j];
+    }
+    for (j = 0; j < gr2; ++j) {
+        root2 += grid_proc[j];
+    }
+
+    newA = (double **) SUPERLU_MALLOC((d-2)*sizeof(double*));
+    newU = (double **) SUPERLU_MALLOC((d-2)*sizeof(double*));
+
+    if (grid1->iam != -1) {
+        dallocateA_dist(ms[0], nnzs[0], &nzval_dup, &rowind_dup, &colptr_dup);
+        for (i = 0; i < ms[0]; ++i) {
+            for (j = colptr_dup[i]; j < colptr_dup[i+1]; ++j) {
+                nzval_dup[j] = nzvals[0][j];
+                rowind_dup[j] = rowinds[0][j];
+            }
+            colptr_dup[i] = colptrs[0][i];
+        }
+        colptr_dup[ms[0]] = colptrs[0][ms[0]];
+
+        TTcores_global = (double **) SUPERLU_MALLOC((d-2)*sizeof(double*));
+
+        rr1 = rs[0];
+
+        if ( !(TTcores_global[0] = doubleMalloc_dist(ms[0]*rr1)) )
+            ABORT("Malloc fails for TTcores_global[0][].");
+        if ( !(newA[0] = doubleMalloc_dist(rr1*rr1)) )
+            ABORT("Malloc fails for newA[0][].");
+
+        if (grid1->iam == 0) {
+            if ( !(tmpA = doubleMalloc_dist(ms[0]*rr1)) )
+                ABORT("Malloc fails for tmpA[].");
+        }
+        dgather_X(TTcores[0], locals[0], TTcores_global[0], ms[0], rr1, grid1);
+
+        if (grid1->iam == 0) {
+            dCreate_CompCol_Matrix_dist(&GA, ms[0], ms[0], nnzs[0], nzvals[0], rowinds[0], colptrs[0],
+                SLU_NC, SLU_D, SLU_GE);
+            sp_dgemm_dist(transpose, rr1, one, &GA, TTcores_global[0], ms[0], zero, tmpA, ms[0]);
+            Destroy_CompCol_Matrix_dist(&GA);
+
+            dgemm_("T", "N", &rr1, &rr1, &(ms[0]), &one, TTcores_global[0], &(ms[0]), tmpA, &(ms[0]), &zero, newA[0], &rr1);
+        }
+
+        MPI_Bcast(TTcores_global[0], ms[0]*rr1, MPI_DOUBLE, 0, grid1->comm);
+        MPI_Bcast(newA[0], rr1*rr1, MPI_DOUBLE, 0, grid1->comm);
+
+        MPI_Barrier(grid1->comm);
+    }
+
+    for (k = 1; k < d-2; ++k) {
+        if (grid1->iam != -1) {
+            dmult_TTfADI_RHS(ms, rs, locals[k], k, Us[k], nrhss[k], TTcores_global, &(newU[k-1]));
+            fadi_col_adils(options, rs[k-1], newA[k-1], ms[k], nnzs[k], nzvals[k], rowinds[k], colptrs[k], grid1, newU[k-1], locals[k],
+                ps[k], qs[k], ls[k], las[k-1], uas[k-1], lbs[k-1], ubs[k-1], tol, &(TTcores[k]), nrhss[k], &rr1);
+            rs[k] = rr1;
+
+            if ( !(TTcores_global[k] = doubleMalloc_dist(rs[k-1]*ms[k]*rr1)) )
+                ABORT("Malloc fails for TTcores_global[k][].");
+            if ( !(newA[k] = doubleMalloc_dist(rr1*rr1)) )
+                ABORT("Malloc fails for newA[k][].");
+
+            if (grid1->iam == 0) {
+                printf("Grid 1 finishes fadi_col for dimension %d with TT rank %d!\n", k+1, rr1);
+                fflush(stdout);
+            }
+
+            dgather_X(TTcores[k], rs[k-1]*locals[k], TTcores_global[k], rs[k-1]*ms[k], rr1, grid1);
+            if (grid1->iam == 0) {
+                dmult_TTfADI_mat(rs[k-1], newA[k-1], ms[k], nnzs[k], nzvals[k], rowinds[k], colptrs[k],
+                    TTcores_global[k], rr1, newA[k]);
+            }
+
+            MPI_Bcast(TTcores_global[k], rs[k-1]*ms[k]*rr1, MPI_DOUBLE, 0, grid1->comm);
+            MPI_Bcast(newA[k], rr1*rr1, MPI_DOUBLE, 0, grid1->comm);
+        }
+
+        if (grid1->iam == 0) {
+            MPI_Send(&rr1, 1, MPI_INT, root2, 0, MPI_COMM_WORLD);
+        }
+        else if (grid2->iam == 0) {
+            MPI_Recv(&rr1, 1, MPI_INT, root1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+        if (grid2->iam != -1) {
+            MPI_Bcast(&rr1, 1, MPI_INT, 0, grid2->comm);
+            rs[k] = rr1;
+
+            MPI_Barrier(grid2->comm);
+        }
+
+        if (grid1->iam != -1) {
+            MPI_Barrier(grid1->comm);
+        }
+    }
+
+    if (grid1->iam != -1) {
+        dallocateA_dist(ms[d-2], nnzs[d-2], &nzval_neg1, &rowind_neg1, &colptr_neg1);
+        for (i = 0; i < ms[d-2]; ++i) {
+            for (j = colptrs[d-2][i]; j < colptrs[d-2][i+1]; ++j) {
+                nzval_neg1[j] = -nzvals[d-2][j];
+                rowind_neg1[j] = rowinds[d-2][j];
+            }
+            colptr_neg1[i] = colptrs[d-2][i];
+        }
+        colptr_neg1[ms[d-2]] = colptrs[d-2][ms[d-2]];
+
+        dmult_TTfADI_RHS(ms, rs, locals[d-2], d-2, Us[d-2], nrhss[d-2], TTcores_global, &(newU[d-3]));
+
+        MPI_Barrier(grid1->comm);
+    }
+    if (grid2->iam != -1) {
+        dallocateA_dist(ms[d-1], nnzs[d-1], &nzval_neg2, &rowind_neg2, &colptr_neg2);
+        for (i = 0; i < ms[d-1]; ++i) {
+            for (j = colptrs[d-1][i]; j < colptrs[d-1][i+1]; ++j) {
+                nzval_neg2[j] = -nzvals[d-1][j];
+                rowind_neg2[j] = rowinds[d-1][j];
+            }
+            colptr_neg2[i] = colptrs[d-1][i];
+        }
+        colptr_neg2[ms[d-1]] = colptrs[d-1][ms[d-1]];
+
+        MPI_Barrier(grid2->comm);
+    }
+    if ((grid1->iam != -1) || (grid2->iam != -1)) {
+        // if (grid2->iam != -1) {
+        //     printf("Grid 2 proc %d starts final fadi_sp!\n", grid2->iam);
+        //     fflush(stdout);
+        // }
+
+        fadi_sp(options, rs[d-3], newA[d-3], ms[d-2], nnzs[d-2], nzval_neg1, rowind_neg1, colptr_neg1, 
+            ms[d-1], nnzs[d-1], nzval_neg2, rowind_neg2, colptr_neg2, grid1, grid2, 
+            newU[d-3], rs[d-3]*locals[d-2], V, locals[d-1], ps[d-2], qs[d-2], ls[d-2], tol, &(TTcores[d-2]), &(TTcores[d-1]), 
+            nrhss[d-2], &rr1, las[d-3], uas[d-3], lbs[d-3], ubs[d-3], grid_proc, gr1, gr2);
+        rs[d-2] = rr1;
+
+        if (grid1->iam == 0) {
+            printf("Grid 1 and 2 finish final fadi_sp!\n");
+            fflush(stdout);
+        }
+    }
+
+    if (grid1->iam != -1) {
+        MPI_Barrier(grid1->comm);
+    }
+    if (grid2->iam != -1) {
+        MPI_Barrier(grid2->comm);
+    }
+    
+    if (grid1->iam == 0) {
+        SUPERLU_FREE(tmpA);
+    }
+    if (grid1->iam != -1) {
+        for (j = 0; j < d-2; ++j) {
+            SUPERLU_FREE(TTcores_global[j]);
+            SUPERLU_FREE(newA[j]);
+            SUPERLU_FREE(newU[j]);
+        }
+        SUPERLU_FREE(TTcores_global);
+    }
+    SUPERLU_FREE(newA);
+    SUPERLU_FREE(newU);
+}
+
+void fadi_ttsvd_rep(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, double **nzvals, int_t **rowinds, int_t **colptrs,
+    gridinfo_t *grid1, gridinfo_t *grid2, double **Us, double **Vs, int_t *locals1, int_t *locals2, int_t *nrhss, double **ps, double **qs, int_t *ls, double tol,
+    double *las, double *uas, double *lbs, double *ubs, double **TTcores, int *rs, int *grid_proc, int rep, int *grid_main)
+{
+    if (rep == 0) {
+        fadi_ttsvd(options, d, ms, nnzs, nzvals, rowinds, colptrs, grid1, grid2, Us, Vs[0], locals1, nrhss, ps, qs, ls, tol,
+            las, uas, lbs, ubs, TTcores, rs, grid_proc);
+        *grid_main = 0;
+    }
+
+    int_t i, j, k, l;
+    double *TTcores_old[d], *TTcores_new[d];
+    int rr1;
+    double *ps_neg[d-1], *qs_neg[d-1];
+    int_t ms_rev[d], nnzs_rev[d], nrhss_rev[d-1], ls_rev[d-1];
+    int_t *rowinds_rev[d], *colptrs_rev[d];
+    double las_rev[d-2], uas_rev[d-2], lbs_rev[d-2], ubs_rev[d-2];
+    double *nzvals_rev[d];
+    int rs_rev[d-1];
+
+    for (j = 0; j < d; ++j) {
+        ms_rev[j] = ms[d-1-j];
+        nnzs_rev[j] = nnzs[d-1-j];
+
+        dallocateA_dist(ms_rev[j], nnzs_rev[j], &nzvals_rev[j], &rowinds_rev[j], &colptrs_rev[j]);
+        for (i = 0; i < ms_rev[j]; ++i) {
+            for (k = colptrs_rev[j][i]; k < colptrs_rev[j][i+1]; ++k) {
+                nzvals_rev[j][k] = nzvals[d-1-j][k];
+                rowinds_rev[j][k] = rowinds[d-1-j][k];
+            }
+            colptrs_rev[i] = colptrs[d-1-j][i];
+        }
+        colptrs_rev[ms_rev[j]] = colptrs[d-1-j][ms[d-1-j]];
+    }
+
+    for (j = 0; j < d-1; ++j) {
+        nrhss_rev[j] = nrhss[d-2-j];
+        ls_rev[j] = ls[d-2-j];
+
+        if ( !(ps_neg[j] = doubleMalloc_dist(ls_rev[j])) )
+            ABORT("Malloc fails for ps_neg[j][].");
+        if ( !(qs_neg[j] = doubleMalloc_dist(ls_rev[j])) )
+            ABORT("Malloc fails for qs_neg[j][].");
+        for (i = 0; i < ls_rev[j]; ++i) {
+            ps_neg[j][i] = -ps[d-2-j][i];
+            qs_neg[j][i] = -qs[d-2-j][i];
+        }
+    }
+
+    for (j = 0; j < d-2; ++j) {
+        las_rev[j] = las[d-2+j];
+        uas_rev[j] = uas[d-2+j];
+        lbs_rev[j] = lbs[d-2+j];
+        ubs_rev[j] = ubs[d-2+j];
+    }
+
+    fadi_ttsvd(options, d, ms, nnzs, nzvals, rowinds, colptrs, grid1, grid2, Us, Vs[0], locals1, nrhss, ps, qs, ls, tol,
+            las, uas, lbs, ubs, TTcores_old, rs, grid_proc);
+    rs_rev[0] = rs[d-1];
+
+    if (grid1->iam == 0) {
+        printf("Finish with basic solve.\n");
+        fflush(stdout);
+    }
+
+    for (l = 0; l < rep; ++l) {
+        if (l % 2 == 0) {
+            if (grid2->iam != -1) {
+                if ( !(TTcores_new[0] = doubleMalloc_dist(locals2[0]*rs_rev[0])) )
+                    ABORT("Malloc fails for TTcores_new[0].");
+                for (j = 0; j < rs_rev[0]; ++j) {
+                    for (i = 0; i < locals2[0]; ++i) {
+                        TTcores_new[0][j*locals2[0]+i] = TTcores_old[d-1][i*rs[d-1]+j];
+                    }
+                }
+
+                SUPERLU_FREE(TTcores_old[d-1]);
+            }
+            if (grid1->iam != -1) {
+                for (j = 0; j < d-1; ++j) {
+                    SUPERLU_FREE(TTcores_old[j]);
+                }
+            }
+
+            fadi_ttsvd_1core(options, d, ms_rev, nnzs_rev, nzvals_rev, rowinds_rev, colptrs_rev, grid2, grid1, Vs, Us[0], locals2, 
+                nrhss_rev, qs_neg, ps_neg, ls_rev, tol, las_rev, uas_rev, lbs_rev, ubs_rev, TTcores_new, rs_rev, grid_proc, 1, 0);
+            rs[0] = rs_rev[d-1];
+
+            if (grid2->iam == 0) {
+                printf("Finish with rep number %d.\n", l+1);
+                fflush(stdout);
+            }
+        }
+        else {
+            if (grid1->iam != -1) {
+                if ( !(TTcores_old[0] = doubleMalloc_dist(locals1[0]*rs[0])) )
+                    ABORT("Malloc fails for TTcores_old[0].");
+                for (j = 0; j < rs[0]; ++j) {
+                    for (i = 0; i < locals1[0]; ++i) {
+                        TTcores_old[0][j*locals1[0]+i] = TTcores_new[d-1][i*rs_rev[d-1]+j];
+                    }
+                }
+
+                SUPERLU_FREE(TTcores_new[d-1]);
+            }
+            if (grid2->iam != -1) {
+                for (j = 0; j < d-1; ++j) {
+                    SUPERLU_FREE(TTcores_new[j]);
+                }
+            }
+
+            fadi_ttsvd_1core(options, d, ms, nnzs, nzvals, rowinds, colptrs, grid1, grid2, Us, Vs[0], locals1, 
+                nrhss, ps, qs, ls, tol, las, uas, lbs, ubs, TTcores_old, rs, grid_proc, 0, 1);
+            rs_rev[0] = rs[d-1];
+
+            if (grid1->iam == 0) {
+                printf("Finish with rep number %d.\n", l+1);
+                fflush(stdout);
+            }
+        }
+    }
+
+    if (rep % 2 == 0) {
+        if (grid1->iam != -1) {
+            for (j = 0; j < d-1; ++j) {
+                l = j == 0 ? locals1[0]*rs[0] : rs[j-1]*locals1[j]*rs[j];
+                if ( !(TTcores[j] = doubleMalloc_dist(l)) )
+                    ABORT("Malloc fails for TTcores[j].");
+                for (i = 0; i < l; ++i) {
+                    TTcores[j][i] = TTcores_old[j][i];
+                }
+
+                SUPERLU_FREE(TTcores_old[j]);
+            }
+        }
+        if (grid2->iam != -1) {
+            if ( !(TTcores[d-1] = doubleMalloc_dist(locals1[d-1]*rs[d-2])) )
+                ABORT("Malloc fails for TTcores[d-1].");
+            for (i = 0; i < locals1[d-1]*rs[d-2]; ++i) {
+                TTcores[d-1][i] = TTcores_old[d-1][i];
+            }
+
+            SUPERLU_FREE(TTcores_old[d-1]);
+        }
+        *grid_main = 0;
+    }
+    else {
+        dtranspose_TTcores(rs_rev, rs, locals2, d, TTcores_new, TTcores, grid1, grid2);
+        *grid_main = 1;
+    }
+
+    for (j = 0; j < d-1; ++j) {
+        SUPERLU_FREE(ps_neg[j]);
+        SUPERLU_FREE(qs_neg[j]);
+    }
+}
+
 void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_A, double *nzval_A, int_t *rowind_A, int_t *colptr_A,
     int_t m_B, int_t nnz_B, double *nzval_B, int_t *rowind_B, int_t *colptr_B,
     int_t m_C, int_t nnz_C, double *nzval_C, int_t *rowind_C, int_t *colptr_C,
