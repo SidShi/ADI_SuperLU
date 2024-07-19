@@ -2251,7 +2251,7 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
 
         dallocateA_dist(ms[0], nnzs[0], &nzval_dup1, &rowind_dup1, &colptr_dup1);
         for (i = 0; i < ms[0]; ++i) {
-            for (j = colptr_dup1[i]; j < colptr_dup1[i+1]; ++j) {
+            for (j = colptrs[0][i]; j < colptrs[0][i+1]; ++j) {
                 nzval_dup1[j] = nzvals[0][j];
                 rowind_dup1[j] = rowinds[0][j];
             }
@@ -2280,10 +2280,10 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
         dgather_X(TTcores[0], locals[0], TTcores_global[0], ms[0], rr1, grid1);
 
         if (grid1->iam == 0) {
-            // dCreate_CompCol_Matrix_dist(&GA, ms[0], ms[0], nnzs[0], nzval_dup1, rowind_dup1, colptr_dup1,
-            //     SLU_NC, SLU_D, SLU_GE);
-            dCreate_CompCol_Matrix_dist(&GA, ms[0], ms[0], nnzs[0], nzvals[0], rowinds[0], colptrs[0],
+            dCreate_CompCol_Matrix_dist(&GA, ms[0], ms[0], nnzs[0], nzval_dup1, rowind_dup1, colptr_dup1,
                 SLU_NC, SLU_D, SLU_GE);
+            // dCreate_CompCol_Matrix_dist(&GA, ms[0], ms[0], nnzs[0], nzvals[0], rowinds[0], colptrs[0],
+            //     SLU_NC, SLU_D, SLU_GE);
             sp_dgemm_dist(transpose, rr1, one, &GA, TTcores_global[0], ms[0], zero, tmpA, ms[0]);
             Destroy_CompCol_Matrix_dist(&GA);
 
@@ -2322,7 +2322,7 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
 
             dallocateA_dist(ms[k], nnzs[k], &nzval_dup2, &rowind_dup2, &colptr_dup2);
             for (i = 0; i < ms[k]; ++i) {
-                for (j = colptr_dup2[i]; j < colptr_dup2[i+1]; ++j) {
+                for (j = colptrs[k][i]; j < colptrs[k][i+1]; ++j) {
                     nzval_dup2[j] = nzvals[k][j];
                     rowind_dup2[j] = rowinds[k][j];
                 }
@@ -2330,10 +2330,10 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
             }
             colptr_dup2[ms[k]] = colptrs[k][ms[k]];
 
-            // fadi_col_adils(options, rs[k-1], newA[k-1], ms[k], nnzs[k], nzval_dup2, rowind_dup2, colptr_dup2, grid1, newU[k-1], locals[k],
-            //     ps[k], qs[k], ls[k], las[k-1], uas[k-1], lbs[k-1], ubs[k-1], tol, &(TTcores[k]), nrhss[k], &rr1);
-            fadi_col_adils(options, rs[k-1], newA[k-1], ms[k], nnzs[k], nzvals[k], rowinds[k], colptrs[k], grid1, newU[k-1], locals[k],
+            fadi_col_adils(options, rs[k-1], newA[k-1], ms[k], nnzs[k], nzval_dup2, rowind_dup2, colptr_dup2, grid1, newU[k-1], locals[k],
                 ps[k], qs[k], ls[k], las[k-1], uas[k-1], lbs[k-1], ubs[k-1], tol, &(TTcores[k]), nrhss[k], &rr1);
+            // fadi_col_adils(options, rs[k-1], newA[k-1], ms[k], nnzs[k], nzvals[k], rowinds[k], colptrs[k], grid1, newU[k-1], locals[k],
+            //     ps[k], qs[k], ls[k], las[k-1], uas[k-1], lbs[k-1], ubs[k-1], tol, &(TTcores[k]), nrhss[k], &rr1);
             rs[k] = rr1;
 
             if ( !(TTcores_global[k] = doubleMalloc_dist(rs[k-1]*ms[k]*rr1)) )
@@ -2348,10 +2348,10 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
 
             dgather_X(TTcores[k], rs[k-1]*locals[k], TTcores_global[k], rs[k-1]*ms[k], rr1, grid1);
             if (grid1->iam == 0) {
-                // dmult_TTfADI_mat(rs[k-1], newA[k-1], ms[k], nnzs[k], nzval_dup2, rowind_dup2, colptr_dup2,
-                //     TTcores_global[k], rr1, newA[k]);
-                dmult_TTfADI_mat(rs[k-1], newA[k-1], ms[k], nnzs[k], nzvals[k], rowinds[k], colptrs[k],
+                dmult_TTfADI_mat(rs[k-1], newA[k-1], ms[k], nnzs[k], nzval_dup2, rowind_dup2, colptr_dup2,
                     TTcores_global[k], rr1, newA[k]);
+                // dmult_TTfADI_mat(rs[k-1], newA[k-1], ms[k], nnzs[k], nzvals[k], rowinds[k], colptrs[k],
+                //     TTcores_global[k], rr1, newA[k]);
             }
 
             MPI_Bcast(TTcores_global[k], rs[k-1]*ms[k]*rr1, MPI_DOUBLE, 0, grid1->comm);
@@ -2473,7 +2473,7 @@ void fadi_ttsvd_1core(superlu_dist_options_t options, int d, int_t *ms, int_t *n
     if (grid1->iam != -1) {
         dallocateA_dist(ms[0], nnzs[0], &nzval_dup1, &rowind_dup1, &colptr_dup1);
         for (i = 0; i < ms[0]; ++i) {
-            for (j = colptr_dup1[i]; j < colptr_dup1[i+1]; ++j) {
+            for (j = colptrs[0][i]; j < colptrs[0][i+1]; ++j) {
                 nzval_dup1[j] = nzvals[0][j];
                 rowind_dup1[j] = rowinds[0][j];
             }
@@ -2520,7 +2520,7 @@ void fadi_ttsvd_1core(superlu_dist_options_t options, int d, int_t *ms, int_t *n
 
             dallocateA_dist(ms[k], nnzs[k], &nzval_dup2, &rowind_dup2, &colptr_dup2);
             for (i = 0; i < ms[k]; ++i) {
-                for (j = colptr_dup2[i]; j < colptr_dup2[i+1]; ++j) {
+                for (j = colptrs[k][i]; j < colptrs[k][i+1]; ++j) {
                     nzval_dup2[j] = nzvals[k][j];
                     rowind_dup2[j] = rowinds[k][j];
                 }
@@ -2666,7 +2666,7 @@ void fadi_ttsvd_rep(superlu_dist_options_t options, int d, int_t *ms, int_t *nnz
 
         dallocateA_dist(ms_rev[j], nnzs_rev[j], &nzvals_rev[j], &rowinds_rev[j], &colptrs_rev[j]);
         for (i = 0; i < ms_rev[j]; ++i) {
-            for (k = colptrs_rev[j][i]; k < colptrs_rev[j][i+1]; ++k) {
+            for (k = colptrs[d-1-j][i]; k < colptrs[d-1-j][i+1]; ++k) {
                 nzvals_rev[j][k] = nzvals[d-1-j][k];
                 rowinds_rev[j][k] = rowinds[d-1-j][k];
             }
