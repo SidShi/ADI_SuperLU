@@ -2660,19 +2660,35 @@ void fadi_ttsvd_rep(superlu_dist_options_t options, int d, int_t *ms, int_t *nnz
     double *nzvals_rev[d];
     int rs_rev[d-1];
 
-    for (j = 0; j < d; ++j) {
-        ms_rev[j] = ms[d-1-j];
-        nnzs_rev[j] = nnzs[d-1-j];
+    if (grid2->iam != -1) {
+        for (j = 0; j < d-1; ++j) {
+            ms_rev[j] = ms[d-1-j];
+            nnzs_rev[j] = nnzs[d-1-j];
 
-        dallocateA_dist(ms_rev[j], nnzs_rev[j], &nzvals_rev[j], &rowinds_rev[j], &colptrs_rev[j]);
-        for (i = 0; i < ms_rev[j]; ++i) {
-            for (k = colptrs[d-1-j][i]; k < colptrs[d-1-j][i+1]; ++k) {
-                nzvals_rev[j][k] = nzvals[d-1-j][k];
-                rowinds_rev[j][k] = rowinds[d-1-j][k];
+            dallocateA_dist(ms_rev[j], nnzs_rev[j], &nzvals_rev[j], &rowinds_rev[j], &colptrs_rev[j]);
+            for (i = 0; i < ms_rev[j]; ++i) {
+                for (k = colptrs[d-1-j][i]; k < colptrs[d-1-j][i+1]; ++k) {
+                    nzvals_rev[j][k] = nzvals[d-1-j][k];
+                    rowinds_rev[j][k] = rowinds[d-1-j][k];
+                }
+                colptrs_rev[j][i] = colptrs[d-1-j][i];
             }
-            colptrs_rev[j][i] = colptrs[d-1-j][i];
+            colptrs_rev[j][ms_rev[j]] = colptrs[d-1-j][ms[d-1-j]];
         }
-        colptrs_rev[j][ms_rev[j]] = colptrs[d-1-j][ms[d-1-j]];
+    }
+    if (grid1->iam != -1) {
+        ms_rev[d-1] = ms[0];
+        nnzs_rev[d-1] = nnzs[0];
+
+        dallocateA_dist(ms_rev[d-1], nnzs_rev[d-1], &nzvals_rev[d-1], &rowinds_rev[d-1], &colptrs_rev[d-1]);
+        for (i = 0; i < ms_rev[d-1]; ++i) {
+            for (k = colptrs[0][i]; k < colptrs[0][i+1]; ++k) {
+                nzvals_rev[d-1][k] = nzvals[0][k];
+                rowinds_rev[d-1][k] = rowinds[0][k];
+            }
+            colptrs_rev[d-1][i] = colptrs[0][i];
+        }
+        colptrs_rev[d-1][ms_rev[d-1]] = colptrs[0][ms[0]];
     }
 
     for (j = 0; j < d-1; ++j) {
