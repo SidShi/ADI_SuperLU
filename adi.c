@@ -2622,9 +2622,9 @@ void fadi_ttsvd_rep(superlu_dist_options_t options, int d, int_t *ms, int_t *nnz
                 nzvals_rev[j][k] = nzvals[d-1-j][k];
                 rowinds_rev[j][k] = rowinds[d-1-j][k];
             }
-            colptrs_rev[i] = colptrs[d-1-j][i];
+            colptrs_rev[j][i] = colptrs[d-1-j][i];
         }
-        colptrs_rev[ms_rev[j]] = colptrs[d-1-j][ms[d-1-j]];
+        colptrs_rev[j][ms_rev[j]] = colptrs[d-1-j][ms[d-1-j]];
     }
 
     for (j = 0; j < d-1; ++j) {

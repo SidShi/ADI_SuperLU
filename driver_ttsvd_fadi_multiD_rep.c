@@ -598,7 +598,6 @@ int main(int argc, char *argv[])
        CHECK ACCURACY OF REPRODUCED RHS.
        ------------------------------------------------------------*/
     
-    dcheck_error_TT_2grids(ms, nnzs, nzvals_alt, rowinds_alt, colptrs_alt, &grid1, &grid2, rs, locals, dim, trueF_global, TTcores, trueX_global, grid_proc);
     if (grid_main == 0) {
         dcheck_error_TT_2grids_comb(ms, nnzs, nzvals_alt, rowinds_alt, colptrs_alt, &grid1, &grid2, rs, locals1, dim, 
             trueF_global, TTcores, trueX_global, grid_proc, grid_main);
