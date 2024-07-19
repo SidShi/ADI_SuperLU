@@ -2666,7 +2666,7 @@ void fadi_ttsvd_rep(superlu_dist_options_t options, int d, int_t *ms, int_t *nnz
                     ABORT("Malloc fails for TTcores_new[0].");
                 for (j = 0; j < rs_rev[0]; ++j) {
                     for (i = 0; i < locals2[0]; ++i) {
-                        TTcores_new[0][j*locals2[0]+i] = TTcores_old[d-1][i*rs[d-1]+j];
+                        TTcores_new[0][j*locals2[0]+i] = TTcores_old[d-1][i*rs[d-2]+j];
                     }
                 }
 
@@ -2693,7 +2693,7 @@ void fadi_ttsvd_rep(superlu_dist_options_t options, int d, int_t *ms, int_t *nnz
                     ABORT("Malloc fails for TTcores_old[0].");
                 for (j = 0; j < rs[0]; ++j) {
                     for (i = 0; i < locals1[0]; ++i) {
-                        TTcores_old[0][j*locals1[0]+i] = TTcores_new[d-1][i*rs_rev[d-1]+j];
+                        TTcores_old[0][j*locals1[0]+i] = TTcores_new[d-1][i*rs_rev[d-2]+j];
                     }
                 }
 
