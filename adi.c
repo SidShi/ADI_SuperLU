@@ -2259,10 +2259,10 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
         }
         colptr_dup1[ms[0]] = colptrs[0][ms[0]];
 
-        // fadi_col(options, ms[0], nnzs[0], nzval_dup1, rowind_dup1, colptr_dup1, grid1, Us[0], locals[0], 
-        //     ps[0], qs[0], ls[0], tol, &(TTcores[0]), nrhss[0], &rr1);
-        fadi_col(options, ms[0], nnzs[0], nzvals[0], rowinds[0], colptrs[0], grid1, Us[0], locals[0], 
+        fadi_col(options, ms[0], nnzs[0], nzval_dup1, rowind_dup1, colptr_dup1, grid1, Us[0], locals[0], 
             ps[0], qs[0], ls[0], tol, &(TTcores[0]), nrhss[0], &rr1);
+        // fadi_col(options, ms[0], nnzs[0], nzvals[0], rowinds[0], colptrs[0], grid1, Us[0], locals[0], 
+        //     ps[0], qs[0], ls[0], tol, &(TTcores[0]), nrhss[0], &rr1);
         rs[0] = rr1;
 
         if ( !(TTcores_global[0] = doubleMalloc_dist(ms[0]*rr1)) )
