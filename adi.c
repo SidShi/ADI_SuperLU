@@ -2400,8 +2400,6 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
     if (grid1->iam == 0) {
         SUPERLU_FREE(tmpA);
     }
-    printf("Proc %d in grid1 and %d in grid2 is here1.\n", grid1->iam, grid2->iam);
-    fflush(stdout);
     if (grid1->iam != -1) {
         for (j = 0; j < d-2; ++j) {
             SUPERLU_FREE(TTcores_global[j]);
@@ -2410,12 +2408,8 @@ void fadi_ttsvd(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, d
         }
         SUPERLU_FREE(TTcores_global);
     }
-    printf("Proc %d in grid1 and %d in grid2 is here2.\n", grid1->iam, grid2->iam);
-    fflush(stdout);
     SUPERLU_FREE(newA);
     SUPERLU_FREE(newU);
-    printf("Proc %d in grid1 and %d in grid2 is here3.\n", grid1->iam, grid2->iam);
-    fflush(stdout);
 }
 
 void fadi_ttsvd_1core(superlu_dist_options_t options, int d, int_t *ms, int_t *nnzs, double **nzvals, int_t **rowinds, int_t **colptrs,
@@ -2606,6 +2600,8 @@ void fadi_ttsvd_rep(superlu_dist_options_t options, int d, int_t *ms, int_t *nnz
         fadi_ttsvd(options, d, ms, nnzs, nzvals, rowinds, colptrs, grid1, grid2, Us, Vs[0], locals1, nrhss, ps, qs, ls, tol,
             las, uas, lbs, ubs, TTcores, rs, grid_proc);
         *grid_main = 0;
+
+        return;
     }
 
     int_t i, j, k, l;
