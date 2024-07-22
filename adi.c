@@ -2660,9 +2660,12 @@ void fadi_ttsvd_rep(superlu_dist_options_t options, int d, int_t *ms, int_t *nnz
     double *nzvals_rev[d];
     int rs_rev[d-1];
 
+    for (j = 0; j < d; ++j) {
+        ms_rev[j] = ms[d-1-j];
+    }
+
     if (grid2->iam != -1) {
         for (j = 0; j < d-1; ++j) {
-            ms_rev[j] = ms[d-1-j];
             nnzs_rev[j] = nnzs[d-1-j];
 
             dallocateA_dist(ms_rev[j], nnzs_rev[j], &nzvals_rev[j], &rowinds_rev[j], &colptrs_rev[j]);
@@ -2677,7 +2680,6 @@ void fadi_ttsvd_rep(superlu_dist_options_t options, int d, int_t *ms, int_t *nnz
         }
     }
     if (grid1->iam != -1) {
-        ms_rev[d-1] = ms[0];
         nnzs_rev[d-1] = nnzs[0];
 
         dallocateA_dist(ms_rev[d-1], nnzs_rev[d-1], &nzvals_rev[d-1], &rowinds_rev[d-1], &colptrs_rev[d-1]);
@@ -2705,11 +2707,13 @@ void fadi_ttsvd_rep(superlu_dist_options_t options, int d, int_t *ms, int_t *nnz
         }
     }
 
-    for (j = 0; j < d-2; ++j) {
-        las_rev[j] = las[d-2+j];
-        uas_rev[j] = uas[d-2+j];
-        lbs_rev[j] = lbs[d-2+j];
-        ubs_rev[j] = ubs[d-2+j];
+    if ((grid1->iam == 0) || (grid2->iam == 0)) {
+        for (j = 0; j < d-2; ++j) {
+            las_rev[j] = las[d-2+j];
+            uas_rev[j] = uas[d-2+j];
+            lbs_rev[j] = lbs[d-2+j];
+            ubs_rev[j] = ubs[d-2+j];
+        }
     }
 
     fadi_ttsvd(options, d, ms, nnzs, nzvals, rowinds, colptrs, grid1, grid2, Us, Vs[0], locals1, nrhss, ps, qs, ls, tol,
