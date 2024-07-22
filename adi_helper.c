@@ -4441,14 +4441,12 @@ void dmult_TTfADI_RHS(int_t *ms, int_t *rs, int_t local, int ddeal, double *M, i
 
 void dtranspose_TTcores(int_t *rs_R2L, int_t *rs_L2R, int_t *locals_R2L, int d, double **TTcores_R2L, double **TTcores_L2R, gridinfo_t *grid1, gridinfo_t *grid2)
 {
-    int *aug_rs;
+    int aug_rs[d+1];
     char transpose[1];
     *transpose = 'N';
     int_t i, j, k, l;
     double one = 1.0, zero = 0.0;
 
-    if ( !(aug_rs = intMalloc_dist(d+1)) )
-        ABORT("Malloc fails for aug_rs[]");
     aug_rs[0] = 1;
     for (j = 0; j < d-1; ++j) {
         rs_L2R[j] = rs_R2L[d-2-j];
@@ -4460,7 +4458,7 @@ void dtranspose_TTcores(int_t *rs_R2L, int_t *rs_L2R, int_t *locals_R2L, int d, 
         if ( !(TTcores_L2R[0] = doubleMalloc_dist(locals_R2L[d-1]*rs_L2R[0])) )
             ABORT("Malloc fails for TTcores_L2R[0]");
         for (j = 0; j < rs_L2R[0]; ++j) {
-            for (i = 0; i < locals_R2L[d-1]; ++j) {
+            for (i = 0; i < locals_R2L[d-1]; ++i) {
                 TTcores_L2R[0][j*locals_R2L[d-1]+i] = TTcores_R2L[d-1][i*rs_L2R[0]+j];
             }
         }
@@ -4485,6 +4483,4 @@ void dtranspose_TTcores(int_t *rs_R2L, int_t *rs_L2R, int_t *locals_R2L, int d, 
             SUPERLU_FREE(TTcores_R2L[l]);
         }     
     }
-
-    SUPERLU_FREE(aug_rs);
 }

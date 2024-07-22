@@ -2807,12 +2807,12 @@ void fadi_ttsvd_rep(superlu_dist_options_t options, int d, int_t *ms, int_t *nnz
         *grid_main = 0;
     }
     else {
-        printf("Reversed rank computed for proc %d in grid1 and %d in grid2 is ", grid1->iam, grid2->iam);
-        for (j = 0; j < d-1; ++j) {
-            printf("%d ", rs_rev[j]);
-        }
-        printf("\n");
-        fflush(stdout);
+        // printf("Reversed rank computed for proc %d in grid1 and %d in grid2 is ", grid1->iam, grid2->iam);
+        // for (j = 0; j < d-1; ++j) {
+        //     printf("%d ", rs_rev[j]);
+        // }
+        // printf("\n");
+        // fflush(stdout);
         
         dtranspose_TTcores(rs_rev, rs, locals2, d, TTcores_new, TTcores, grid1, grid2);
         *grid_main = 1;
