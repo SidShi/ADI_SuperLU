@@ -106,3 +106,7 @@ fi
 ### fADI TTSVD 4D rep test
 # srun -n 2 ./fadi_ttsvd_md_rep -r 1 -c 1 -w 1 -v 1 -t 0 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_rep_test_small/
 # srun -n 8 ./fadi_ttsvd_md_rep -r 2 -c 2 -w 2 -v 2 -t 0 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_rep_test/
+
+### fADI TTSVD 4D 2way test
+# srun -n 2 ./fadi_ttsvd_md_2way -r 1 -c 1 -w 1 -v 1 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_2way_test_small/
+# srun -n 8 ./fadi_ttsvd_md_2way -r 2 -c 2 -w 2 -v 2 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_2way_test/

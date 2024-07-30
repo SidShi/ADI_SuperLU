@@ -3141,6 +3141,42 @@ void dgather_TTcores(double **TTcores, gridinfo_t **grids, int *ms, int *rs, int
     SUPERLU_FREE(aug_rs);
 }
 
+void dgather_TTcores_2grids_sep(double **TTcores, gridinfo_t *grid1, gridinfo_t *grid2, int *ms, int *rs, int *locals, int d, int sep, double **TTcores_global)
+{
+    int_t k;
+    int *aug_rs;
+
+    if ( !(aug_rs = intMalloc_dist(d+1)) )
+        ABORT("Malloc fails for aug_rs[]");
+    aug_rs[0] = 1;
+    for (k = 0; k < d-1; ++k) {
+        aug_rs[k+1] = rs[k];
+    }
+    aug_rs[d] = 1;
+
+    for (k = 0; k < sep; ++k) {
+        if (grid1->iam == 0) {
+            if ( !(TTcores_global[k] = doubleMalloc_dist(aug_rs[k]*ms[k]*aug_rs[k+1])) )
+                ABORT("Malloc fails for TTcores_global[k][]");
+        }
+        if (grid1->iam != -1) {
+            dgather_X(TTcores[k], aug_rs[k]*locals[k], TTcores_global[k], aug_rs[k]*ms[k], aug_rs[k+1], grid1);
+        }
+    }
+
+    for (k = sep; k < d; ++k) {
+        if (grid2->iam == 0) {
+            if ( !(TTcores_global[k] = doubleMalloc_dist(aug_rs[k]*ms[k]*aug_rs[k+1])) )
+                ABORT("Malloc fails for TTcores_global[k][]");
+        }
+        if (grid2->iam != -1) {
+            dgather_X(TTcores[k], aug_rs[k]*locals[k], TTcores_global[k], aug_rs[k]*ms[k], aug_rs[k+1], grid2);
+        }
+    }
+
+    SUPERLU_FREE(aug_rs);
+}
+
 void dgather_TTcores_2grids(double **TTcores, gridinfo_t *grid1, gridinfo_t *grid2, int *ms, int *rs, int *locals, int d, double **TTcores_global)
 {
     int_t k;
@@ -3280,6 +3316,101 @@ void dconvertTT_tensor(double **TTcores_global, gridinfo_t **grids, int *ms, int
             SUPERLU_FREE(global_TTcores_root[k]);
         }
         SUPERLU_FREE(global_TTcores_root);
+    }
+
+    SUPERLU_FREE(TTcore_col);
+    SUPERLU_FREE(reconstruct_row);
+    SUPERLU_FREE(aug_rs);
+}
+
+void dconvertTT_tensor_2grids_sep(double **TTcores_global, gridinfo_t *grid1, gridinfo_t *grid2, int *ms, int *rs, int *locals, 
+    int d, int sep, double *X, int *grid_proc)
+{
+    int_t i, j, k;
+    double **tmp;
+    double *TTcore_from2[d-sep];
+    int *TTcore_col, *reconstruct_row, *aug_rs;
+    double one = 1.0, zero = 0.0;
+
+    if ( !(aug_rs = intMalloc_dist(d+1)) )
+        ABORT("Malloc fails for aug_rs[]");
+    aug_rs[0] = 1;
+    for (k = 0; k < d-1; ++k) {
+        aug_rs[k+1] = rs[k];
+    }
+    aug_rs[d] = 1;
+
+    if ( !(TTcore_col = intMalloc_dist(d)) )
+        ABORT("Malloc fails for TTcore_col[]");
+    for (k = 0; k < d; ++k) {
+        TTcore_col[k] = ms[k]*aug_rs[k+1];
+    }
+
+    if ( !(reconstruct_row = intMalloc_dist(d-1)) )
+        ABORT("Malloc fails for reconstruct_row[]");
+    reconstruct_row[0] = ms[0];
+    for (k = 1; k < d-1; ++k) {
+        reconstruct_row[k] = reconstruct_row[k-1] * ms[k];
+    }
+
+    if (grid1->iam == 0) {
+        for (k = sep; k < d; ++k) {
+            if ( !(TTcore_from2[k-sep] = doubleMalloc_dist(aug_rs[k]*ms[k]*aug_rs[k+1])) )
+                ABORT("Malloc fails for TTcore_from2[k-sep][]");
+        }
+    }
+    for (k = sep; k < d; ++k) {
+        transfer_X_dgrids(TTcores_global[k], aug_rs[k]*ms[k], aug_rs[k+1], TTcore_from2[k-sep], grid_proc, 1, 0);
+    }
+
+    if (grid1->iam == 0) {
+        tmp = (double **) SUPERLU_MALLOC((d-2)*sizeof(double*));
+        if ( !(tmp[0] = doubleMalloc_dist(reconstruct_row[0]*TTcore_col[1])) )
+            ABORT("Malloc fails for tmp[0][]");
+
+        if (sep == 1) {
+            dgemm_("N", "N", &(reconstruct_row[0]), &(TTcore_col[1]), &(aug_rs[1]), &one, TTcores_global[0], &(reconstruct_row[0]), 
+                TTcore_from2[0], &(aug_rs[1]), &zero, tmp[0], &(reconstruct_row[0]));
+
+            for (k = 1; k < d-2; ++k) {
+                if ( !(tmp[k] = doubleMalloc_dist(reconstruct_row[k]*TTcore_col[k+1])) )
+                    ABORT("Malloc fails for tmp[k][]");
+                dgemm_("N", "N", &(reconstruct_row[k]), &(TTcore_col[k+1]), &(aug_rs[k+1]), &one, tmp[k-1], &(reconstruct_row[k]), 
+                    TTcore_from2[k], &(aug_rs[k+1]), &zero, tmp[k], &(reconstruct_row[k]));
+            }
+            dgemm_("N", "N", &(reconstruct_row[d-2]), &(TTcore_col[d-1]), &(aug_rs[d-1]), &one, tmp[d-3], &(reconstruct_row[d-2]), 
+                TTcore_from2[d-2], &(aug_rs[d-1]), &zero, X, &(reconstruct_row[d-2]));
+        }
+        else {
+            dgemm_("N", "N", &(reconstruct_row[0]), &(TTcore_col[1]), &(aug_rs[1]), &one, TTcores_global[0], &(reconstruct_row[0]), 
+                TTcores_global[1], &(aug_rs[1]), &zero, tmp[0], &(reconstruct_row[0]));
+
+            for (k = 1; k < sep-1; ++k) {
+                if ( !(tmp[k] = doubleMalloc_dist(reconstruct_row[k]*TTcore_col[k+1])) )
+                    ABORT("Malloc fails for tmp[k][]");
+                dgemm_("N", "N", &(reconstruct_row[k]), &(TTcore_col[k+1]), &(aug_rs[k+1]), &one, tmp[k-1], &(reconstruct_row[k]), 
+                    TTcores_global[k+1], &(aug_rs[k+1]), &zero, tmp[k], &(reconstruct_row[k]));
+            }
+
+            for (k = sep-1; k < d-2; ++k) {
+                if ( !(tmp[k] = doubleMalloc_dist(reconstruct_row[k]*TTcore_col[k+1])) )
+                    ABORT("Malloc fails for tmp[k][]");
+                dgemm_("N", "N", &(reconstruct_row[k]), &(TTcore_col[k+1]), &(aug_rs[k+1]), &one, tmp[k-1], &(reconstruct_row[k]), 
+                    TTcore_from2[k-sep+1], &(aug_rs[k+1]), &zero, tmp[k], &(reconstruct_row[k]));
+            }
+            dgemm_("N", "N", &(reconstruct_row[d-2]), &(TTcore_col[d-1]), &(aug_rs[d-1]), &one, tmp[d-3], &(reconstruct_row[d-2]), 
+                TTcore_from2[d-sep-1], &(aug_rs[d-1]), &zero, X, &(reconstruct_row[d-2]));
+        }
+
+        for (k = 0; k < d-2; ++k) {
+            SUPERLU_FREE(tmp[k]);
+        }
+        SUPERLU_FREE(tmp);
+        
+        for (k = 0; k < d-sep; ++k) {
+            SUPERLU_FREE(TTcore_from2[k]);
+        }
+        SUPERLU_FREE(TTcore_from2);
     }
 
     SUPERLU_FREE(TTcore_col);
@@ -4055,6 +4186,215 @@ void dcheck_error_TT_2grids_alt(int_t *ms, int_t *nnzs, double **nzvals, int_t *
     SUPERLU_FREE(aug_rs);
 }
 
+void dcheck_error_TT_2grids_sep(int_t *ms, int_t *nnzs, double **nzvals, int_t **rowinds, int_t **colptrs, gridinfo_t *grid1, gridinfo_t *grid2,
+    int *rs, int *locals, int d, int sep, double *F, double **TTcores, double *trueX, int *grid_proc, int grid_main)
+{
+    int *aug_rs;
+    char transpose[1];
+    *transpose = 'N';
+    double *X, *AX, *RHS;
+    double **TTcores_global;
+    int_t i, j, k, l, t;
+    double err1 = 0.0, err2 = 0.0, norm1 = 0.0, norm2 = 0.0;
+    double s;
+    double one = 1.0, zero = 0.0;
+    int nelem = 1;
+    int global_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
+
+    for (k = 0; k < d; ++k) {
+        nelem = nelem * ms[k];
+    }
+    if ( !(aug_rs = intMalloc_dist(d+1)) )
+        ABORT("Malloc fails for aug_rs[]");
+    aug_rs[0] = 1;
+    for (k = 0; k < d-1; ++k) {
+        aug_rs[k+1] = rs[k];
+    }
+    aug_rs[d] = 1;
+
+    TTcores_global = (double **) SUPERLU_MALLOC(d*sizeof(double*));
+    dgather_TTcores_2grids_sep(TTcores, grid1, grid2, ms, rs, locals, d, sep, TTcores_global);
+
+    if (grid1->iam == 0) {
+        if ( !(X = doubleMalloc_dist(nelem)) )
+            ABORT("Malloc fails for X[]");
+        if ( !(AX = doubleMalloc_dist(nelem)) )
+            ABORT("Malloc fails for AX[]");
+        if ( !(RHS = doubleMalloc_dist(nelem)) )
+            ABORT("Malloc fails for RHS[]");
+
+        for (k = 0; k < nelem; ++k) {
+            RHS[k] = 0.0;
+        }
+    }
+    dconvertTT_tensor_2grids_sep(TTcores_global, grid1, grid2, ms, rs, locals, d, sep, X, grid_proc);
+
+    for (t = 0; t < d; ++t) {
+        double **TTcores_update = (double **) SUPERLU_MALLOC(d*sizeof(double*));
+        if (grid1->iam == 0) {
+            for (l = 0; l < sep; ++l) {
+                if ( !(TTcores_update[l] = doubleMalloc_dist(aug_rs[l]*ms[l]*aug_rs[l+1])) )
+                    ABORT("Malloc fails for TTcores_update[l][]");
+
+                if (l == t) {
+                    SuperMatrix GA;
+                    dCreate_CompCol_Matrix_dist(&GA, ms[l], ms[l], nnzs[l], nzvals[l], rowinds[l], colptrs[l],
+                        SLU_NC, SLU_D, SLU_GE);
+
+                    double *tmp1, *tmp2;
+                    if ( !(tmp1 = doubleMalloc_dist(aug_rs[l]*ms[l]*aug_rs[l+1])) )
+                        ABORT("Malloc fails for tmp1[]");
+                    for (k = 0; k < aug_rs[l+1]; ++k) {
+                        for (j = 0; j < aug_rs[l]; ++j) {
+                            for (i = 0; i < ms[l]; ++i) {
+                                tmp1[k*aug_rs[l]*ms[l]+j*ms[l]+i] = TTcores_global[l][k*aug_rs[l]*ms[l]+i*aug_rs[l]+j];
+                            }
+                        }
+                    }
+
+                    if ( !(tmp2 = doubleMalloc_dist(aug_rs[l]*ms[l]*aug_rs[l+1])) )
+                        ABORT("Malloc fails for tmp2[]");
+                    sp_dgemm_dist(transpose, aug_rs[l]*aug_rs[l+1], 1.0, &GA, tmp1, ms[l], 0.0, tmp2, ms[l]);
+
+                    for (k = 0; k < aug_rs[l+1]; ++k) {
+                        for (j = 0; j < ms[l]; ++j) {
+                            for (i = 0; i < aug_rs[l]; ++i) {
+                                TTcores_update[l][k*aug_rs[l]*ms[l]+j*aug_rs[l]+i] = tmp2[k*aug_rs[l]*ms[l]+i*ms[l]+j];
+                            }
+                        }
+                    }
+
+                    SUPERLU_FREE(tmp1);
+                    SUPERLU_FREE(tmp2);
+
+                    /* Destroy GA */
+                    Destroy_CompCol_Matrix_dist(&GA);
+                }
+                else {
+                    for (j = 0; j < aug_rs[l]*ms[l]*aug_rs[l+1]; ++j) {
+                        TTcores_update[l][j] = TTcores_global[l][j];
+                    }
+                }
+            }
+        }
+        else if (grid2->iam == 0) {
+            for (l = sep; l < d; ++l) {
+                if ( !(TTcores_update[l] = doubleMalloc_dist(aug_rs[l]*ms[l]*aug_rs[l+1])) )
+                    ABORT("Malloc fails for TTcores_update[l][]");
+
+                if (l == t) {
+                    SuperMatrix GA;
+                    dCreate_CompCol_Matrix_dist(&GA, ms[l], ms[l], nnzs[l], nzvals[l], rowinds[l], colptrs[l],
+                        SLU_NC, SLU_D, SLU_GE);
+
+                    double *tmp1, *tmp2;
+                    if ( !(tmp1 = doubleMalloc_dist(aug_rs[l]*ms[l]*aug_rs[l+1])) )
+                        ABORT("Malloc fails for tmp1[]");
+                    for (k = 0; k < aug_rs[l+1]; ++k) {
+                        for (j = 0; j < aug_rs[l]; ++j) {
+                            for (i = 0; i < ms[l]; ++i) {
+                                tmp1[k*aug_rs[l]*ms[l]+j*ms[l]+i] = TTcores_global[l][k*aug_rs[l]*ms[l]+i*aug_rs[l]+j];
+                            }
+                        }
+                    }
+
+                    if ( !(tmp2 = doubleMalloc_dist(aug_rs[l]*ms[l]*aug_rs[l+1])) )
+                        ABORT("Malloc fails for tmp2[]");
+                    sp_dgemm_dist(transpose, aug_rs[l]*aug_rs[l+1], 1.0, &GA, tmp1, ms[l], 0.0, tmp2, ms[l]);
+
+                    for (k = 0; k < aug_rs[l+1]; ++k) {
+                        for (j = 0; j < ms[l]; ++j) {
+                            for (i = 0; i < aug_rs[l]; ++i) {
+                                TTcores_update[l][k*aug_rs[l]*ms[l]+j*aug_rs[l]+i] = tmp2[k*aug_rs[l]*ms[l]+i*ms[l]+j];
+                            }
+                        }
+                    }
+
+                    SUPERLU_FREE(tmp1);
+                    SUPERLU_FREE(tmp2);
+
+                    /* Destroy GA */
+                    Destroy_CompCol_Matrix_dist(&GA);
+                }
+                else {
+                    for (j = 0; j < aug_rs[l]*ms[l]*aug_rs[l+1]; ++j) {
+                        TTcores_update[l][j] = TTcores_global[l][j];
+                    }
+                }
+                // printf("Done mult on grid 1 for iter %d.\n", l);
+                // fflush(stdout);
+            }
+        }
+        // printf("proc %d is here for reconstruction %d.\n", global_rank, t);
+        // fflush(stdout);
+        dconvertTT_tensor_2grids_sep(TTcores_update, grid1, grid2, ms, rs, locals, d, sep, AX, grid_proc);
+        
+        if (grid1->iam == 0) {
+            for (j = 0; j < nelem; ++j) {
+                RHS[j] += AX[j];
+            }
+
+            for (l = 0; l < sep; ++l) {
+                SUPERLU_FREE(TTcores_update[l]);
+            }
+        }
+        if (grid2->iam == 0) {
+            for (l = sep; l < d; ++l) {
+                SUPERLU_FREE(TTcores_update[l]);
+            }
+        }
+        SUPERLU_FREE(TTcores_update);
+
+        if (grid1->iam != -1) {
+            MPI_Barrier(grid1->comm);
+        }
+        if (grid2->iam != -1) {
+            MPI_Barrier(grid2->comm);
+        }
+    }
+    // printf("proc %d is here.\n", global_rank);
+    // fflush(stdout);
+
+    if (grid1->iam == 0) {
+        for (j = 0; j < nelem; ++j) {
+            s = F[j] - RHS[j];
+            err1 += s*s;
+
+            s = X[j] - trueX[j];
+            err2 += s*s;
+
+            s = F[j];
+            norm1 += s*s;
+
+            s = trueX[j];
+            norm2 += s*s;
+        }
+        
+        err1 = sqrt(err1) / sqrt(norm1);
+        err2 = sqrt(err2) / sqrt(norm2);
+        printf("Relative error of approximating RHS is %.10e, and approximating true solution is %.10e.\n", err1, err2);
+        fflush(stdout);
+
+        SUPERLU_FREE(X);
+        SUPERLU_FREE(AX);
+        SUPERLU_FREE(RHS);
+    }
+
+    if (grid1->iam == 0) {
+        for (l = 0; l < sep; ++l) {
+            SUPERLU_FREE(TTcores_global[l]);
+        }
+    }
+    if (grid2->iam == 0) {
+        for (l = sep; l < d; ++l) {
+            SUPERLU_FREE(TTcores_global[l]);
+        }
+    }
+    SUPERLU_FREE(TTcores_global);
+    SUPERLU_FREE(aug_rs);
+}
+
 void dcheck_error_TT_2grids_comb(int_t *ms, int_t *nnzs, double **nzvals, int_t **rowinds, int_t **colptrs, gridinfo_t *grid1, gridinfo_t *grid2,
     int *rs, int *locals, int d, double *F, double **TTcores, double *trueX, int *grid_proc, int grid_main)
 {
@@ -4432,6 +4772,72 @@ void dmult_TTfADI_RHS(int_t *ms, int_t *rs, int_t local, int ddeal, double *M, i
         ABORT("Malloc fails for *newM[]");
     dgemm_("T", "N", &rowtmp, &coltmp, &rowtmp_mid, &one, TTcores_global[ddeal-1], &rowtmp_mid, 
         tmp_mat[ddeal-2], &rowtmp_mid, &zero, *newM, &rowtmp);
+
+    for (k = 0; k < ddeal-1; ++k) {
+        SUPERLU_FREE(tmp_mat[k]);
+    }
+    SUPERLU_FREE(tmp_mat);
+}
+
+void dmult_TTfADI_RHS_alt(int_t *ms, int_t *rs, int_t local, int ddeal, double *M, int nrhs, double **TTcores_global, double **newM)
+{
+    int rowM = 1, rowtmp, coltmp_mid, coltmp;
+    int_t k, l;
+    double **tmp_mat;
+    double one = 1.0, zero = 0.0;
+
+    for (k = 0; k < ddeal; ++k) {
+        rowM *= ms[k];
+    }
+
+    coltmp = rs[0];
+    coltmp_mid = ms[0];
+    rowM = rowM / ms[0];
+    rowtmp = rowM*local;
+
+    if (ddeal == 1) {
+        if ( !(*newM = doubleMalloc_dist(rowtmp*coltmp*nrhs)) )
+            ABORT("Malloc fails for *newM[]");
+
+        for (k = 0; k < nrhs; ++k) {
+            dgemm_("N", "T", &rowtmp, &coltmp, &coltmp_mid, &one, M+k*rowtmp*coltmp_mid, &rowtmp, TTcores_global[0], &coltmp, &zero, 
+                *newM+k*rowtmp*coltmp, &rowtmp);
+        }
+        return;
+    }
+
+    tmp_mat = (double **) SUPERLU_MALLOC((ddeal-1)*sizeof(double*));
+    if ( !(tmp_mat[0] = doubleMalloc_dist(rowtmp*coltmp*nrhs)) )
+        ABORT("Malloc fails for tmp_mat[0][]");
+    for (k = 0; k < nrhs; ++k) {
+        dgemm_("N", "T", &rowtmp, &coltmp, &coltmp_mid, &one, M+k*rowtmp*coltmp_mid, &rowtmp, TTcores_global[0], &coltmp, &zero, 
+            tmp_mat[0]+k*rowtmp*coltmp, &rowtmp);
+    }
+
+    for (l = 1; l < ddeal-1; ++l) {
+        coltmp = rs[l];
+        coltmp_mid = ms[l] * rs[l-1];
+        rowM = rowM / ms[l];
+        rowtmp = rowM*local;
+
+        if ( !(tmp_mat[l] = doubleMalloc_dist(rowtmp*coltmp*nrhs)) )
+            ABORT("Malloc fails for tmp_mat[l][]");
+        for (k = 0; k < nrhs; ++k) {
+            dgemm_("N", "T", &rowtmp, &coltmp, &coltmp_mid, &one, tmp_mat[l-1]+k*rowtmp*coltmp_mid, &rowtmp, TTcores_global[l], &coltmp, &zero, 
+                tmp_mat[l]+k*rowtmp*coltmp, &rowtmp);
+        }
+    }
+
+    coltmp = rs[ddeal-1];
+    coltmp_mid = ms[ddeal-1] * rs[ddeal-2];
+    rowtmp = local;
+
+    if ( !(*newM = doubleMalloc_dist(rowtmp*coltmp*nrhs)) )
+        ABORT("Malloc fails for *newM[]");
+    for (k = 0; k < nrhs; ++k) {
+        dgemm_("N", "T", &rowtmp, &coltmp, &coltmp_mid, &one, tmp_mat[ddeal-2]+k*rowtmp*coltmp_mid, &rowtmp, TTcores_global[ddeal-1], &coltmp, &zero, 
+            *newM+k*rowtmp*coltmp, &rowtmp);
+    }
 
     for (k = 0; k < ddeal-1; ++k) {
         SUPERLU_FREE(tmp_mat[k]);
