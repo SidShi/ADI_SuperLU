@@ -404,7 +404,7 @@ int main(int argc, char *argv[])
     ms_rev[0] = ms[3]; ms_rev[1] = ms[2]; ms_rev[2] = ms[1]; ms_rev[3] = ms[0];
     nrhss_rev[0] = nrhss[2]; nrhss[2] = nrhss[0];
     if (iam2 != -1) {
-        ms[0] = ms_rev[0]; ms[1] = ms_rev[1]; ms[2] = ms_rev[2]; ms[3] = ms_rev[3];
+        // ms[0] = ms_rev[0]; ms[1] = ms_rev[1]; ms[2] = ms_rev[2]; ms[3] = ms_rev[3];
         nrhss[0] = nrhss_rev[0]; nrhss[2] = nrhss_rev[2];
     }
 
