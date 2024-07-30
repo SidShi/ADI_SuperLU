@@ -1501,7 +1501,7 @@ void fadi_sp_2sided(superlu_dist_options_t options, int_t m_A, double *A,
         }
 
         double *compressU, *compressS, *compressV;
-        drecompression_dist_twogrids(localZ, ldu, m_A*m_B, &compressU, localD, &compressS, grid_B,
+        drecompression_dist_twogrids(localZ, ldu, m_A*m_B, &compressU, localS, &compressS, grid_B,
             localY, ldv, m_C*m_D, &compressV, grid_C, &rr, tol, grid_proc, grB, grC);
         if (grid_B->iam != -1) {
             for (j = 0; j < rr; ++j) {
@@ -3063,7 +3063,7 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
     if (d == 3) {
         fadi_ttsvd_3d_2grids(options, ms[0], nnzs[0], nzvals[0], rowinds[0], colptrs[0], ms[1], nnzs[1], nzvals[1], rowinds[1], colptrs[1],
             ms[2], nnzs[2], nzvals[2], rowinds[2], colptrs[2], grid1, grid2, Us[0], locals[0], Us[1], ms[0]*locals[1], 
-            V, locals[2], ps[0], qs[0], ls[0], ps[1], qs[1], ls[1], tol, las[0], uas[0], lbs[0], ubs[0], &(TTcores[0]), &(TTcores[1]), 
+            Vs[0], locals[2], ps[0], qs[0], ls[0], ps[1], qs[1], ls[1], tol, las[0], uas[0], lbs[0], ubs[0], &(TTcores[0]), &(TTcores[1]), 
             &(TTcores[2]), nrhss[0], nrhss[1], &(rs[0]), &(rs[1]), grid_proc, 0, 1);
         return;
     }
@@ -3373,7 +3373,7 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
     }
     if ((grid1->iam != -1) || (grid2->iam != -1)) {
         fadi_sp_2sided(options, rs[deal-2], newA[deal-2], ms[deal-1], nnzs[deal-1], nzval_neg1, rowind_neg1, colptr_neg1,
-            ms_rev[deal-1], nnzs[deal-1], nzval_neg2, rowind_neg2, colptr_neg2, rs_rev[deal-2], nweB[deal-2], grid1, grid2, 
+            ms_rev[deal-1], nnzs[deal-1], nzval_neg2, rowind_neg2, colptr_neg2, rs_rev[deal-2], newB[deal-2], grid1, grid2, 
             newU[deal-2], rs[deal-2]*locals[deal-1], newV[deal-2], rs_rev[deal-2]*locals[deal-1], ps[deal-1], qs[deal-1], ls[deal-1], 
             tol, &(TTcores[deal-1]), &(TTcores[deal]), nrhss[deal-1], &rr1, las[deal-2], uas[deal-2], lbs[deal-2], ubs[deal-2], 
             las[deal-2], uas[deal-2], lbs[deal-2], ubs[deal-2], grid_proc, 0, 1);
