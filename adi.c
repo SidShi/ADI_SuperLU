@@ -1419,7 +1419,7 @@ void fadi_sp_2sided(superlu_dist_options_t options, int_t m_A, double *A,
         for (k = 0; k < r; ++k) {
             for (j = 0; j < m_D; ++j) {
                 for (i = 0; i < ldly; ++i) {
-                    rhs_C[k*ldv+j*ldly+i] = -V[k*ldv+i*m_D+j];
+                    rhs_C[k*ldv+j*ldly+i] = V[k*ldv+i*m_D+j];
                 }
             }
         }
@@ -1469,7 +1469,7 @@ void fadi_sp_2sided(superlu_dist_options_t options, int_t m_A, double *A,
             for (w = 0; w < r; ++w) {
                 for (j = 0; j < m_D; ++j) {
                     for (i = 0; i < ldly; ++i) {
-                        rhs_C[w*ldy+j*ldly+i] = -(p[k]-q[k-1])*iterY[w*ldy+i*m_D+j];
+                        rhs_C[w*ldy+j*ldly+i] = (p[k]-q[k-1])*iterY[w*ldy+j*ldly+i];
                     }
                 }
             }
