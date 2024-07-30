@@ -3083,8 +3083,8 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
         return;
     }
 
-    SuperMatrix GA, GB;
-    double *tmpA, *tmpB;
+    SuperMatrix GA;
+    double *tmpA;
     double *nzval_neg1, *nzval_neg2, *nzval_dup1;
     int_t  *rowind_neg1, *colptr_neg1, *rowind_neg2, *colptr_neg2, *rowind_dup1, *colptr_dup1;
     double **TTcores_global, **TTcores_rev_global, **newA, **newB, **newU, **newV;
@@ -3098,7 +3098,7 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
     if ((grid1->iam != -1) && (d % 2 == 1)) {
         deal++;
     }
-    double *TTcores_rev[deal];
+    double *TTcores_rev[deal-1];
     int_t ms_rev[d];
     int rs_rev[d-1];
 
@@ -3419,6 +3419,8 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
     if ((grid1->iam == 0) || (grid2->iam == 0)) {
         SUPERLU_FREE(tmpA);
     }
+    printf("Proc %d in Grid1 and %d in Grid2 finish final freeing1!\n", grid1->iam, grid2->iam);
+    fflush(stdout);
     if (grid1->iam != -1) {
         for (j = 0; j < deal-1; ++j) {
             SUPERLU_FREE(TTcores_global[j]);
@@ -3431,14 +3433,19 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
             SUPERLU_FREE(TTcores_rev_global[j]);
             SUPERLU_FREE(newB[j]);
             SUPERLU_FREE(newV[j]);
+            SUPERLU_FREE(TTcores_rev[j]);
         }
     }
+    printf("Proc %d in Grid1 and %d in Grid2 finish final freeing2!\n", grid1->iam, grid2->iam);
+    fflush(stdout);
     SUPERLU_FREE(TTcores_global);
     SUPERLU_FREE(newA);
     SUPERLU_FREE(newU);
     SUPERLU_FREE(TTcores_rev_global);
     SUPERLU_FREE(newB);
     SUPERLU_FREE(newV);
+    printf("Proc %d in Grid1 and %d in Grid2 finish final freeing3!\n", grid1->iam, grid2->iam);
+    fflush(stdout);
 }
 
 void fadi_dimPara_ttsvd_3d(superlu_dist_options_t options, int_t m_A, int_t nnz_A, double *nzval_A, int_t *rowind_A, int_t *colptr_A,
