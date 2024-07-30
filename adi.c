@@ -3084,7 +3084,7 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
     }
 
     SuperMatrix GA;
-    double *tmpA;
+    double *tmpA, *newBT;
     double *nzval_neg1, *nzval_neg2, *nzval_dup1;
     int_t  *rowind_neg1, *colptr_neg1, *rowind_neg2, *colptr_neg2, *rowind_dup1, *colptr_dup1;
     double **TTcores_global, **TTcores_rev_global, **newA, **newB, **newU, **newV;
@@ -3297,7 +3297,7 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
             rs[k] = rr1;
             rs_rev[d-2-k] = rr1;
 
-            dmult_TTfADI_RHS_alt(ms_rev, rs_rev, locals[k], k, Vs[k], nrhss[k], TTcores_rev_global, &(newV[k-1]));
+            dmult_TTfADI_RHS(ms_rev, rs_rev, locals[k], k, Vs[k], nrhss[k], TTcores_rev_global, &(newV[k-1]));
 
             dallocateA_dist(ms_rev[k], nnzs[k], &nzval_dup2, &rowind_dup2, &colptr_dup2);
             for (i = 0; i < ms_rev[k]; ++i) {
@@ -3389,15 +3389,19 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
 
         dmult_TTfADI_RHS_alt(ms_rev, rs_rev, locals[deal-1], deal-1, Vs[deal-1], nrhss[deal-1], TTcores_rev_global, &(newV[deal-2]));
 
-        for (j = 0; j < rs_rev[deal-2]*rs_rev[deal-2]; ++j) {
-            newB[deal-2][j] = -newB[deal-2][j];
+        if ( !(newBT = doubleMalloc_dist(rs_rev[deal-2]*rs_rev[deal-2])) )
+            ABORT("Malloc fails for newBT[].");
+        for (j = 0; j < rs_rev[deal-2]; ++j) {
+            for (i = 0; i < rs_rev[deal-2]; ++i) {
+                newBT[j*rs_rev[deal-2]+i] = -newB[deal-2][i*rs_rev[deal-2]+j];
+            }
         }
 
         MPI_Barrier(grid2->comm);
     }
     if ((grid1->iam != -1) || (grid2->iam != -1)) {
         fadi_sp_2sided(options, rs[deal-2], newA[deal-2], ms[deal-1], nnzs[deal-1], nzval_neg1, rowind_neg1, colptr_neg1,
-            ms_rev[deal-1], nnzs[deal-1], nzval_neg2, rowind_neg2, colptr_neg2, rs_rev[deal-2], newB[deal-2], grid1, grid2, 
+            ms_rev[deal-1], nnzs[deal-1], nzval_neg2, rowind_neg2, colptr_neg2, rs_rev[deal-2], newBT, grid1, grid2, 
             newU[deal-2], rs[deal-2]*locals[deal-1], newV[deal-2], rs_rev[deal-2]*locals[deal-1], ps[deal-1], qs[deal-1], ls[deal-1], 
             tol, &(TTcores[deal-1]), &(TTcores[deal]), nrhss[deal-1], &rr1, las[deal-2], uas[deal-2], lbs[deal-2], ubs[deal-2], 
             las[deal-2], uas[deal-2], lbs[deal-2], ubs[deal-2], grid_proc, 0, 1);
