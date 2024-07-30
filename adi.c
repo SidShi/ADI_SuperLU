@@ -1489,6 +1489,14 @@ void fadi_sp_2sided(superlu_dist_options_t options, int_t m_A, double *A,
             for (j = 0; j < r; ++j) {
                 localS[rr+j] = q[k] - p[k];
             }
+
+            printf("Grid 1 finishes solving of iteration %d.", k);
+            fflush(stdout);
+        }
+
+        if (grid_C->iam == 0) {
+            printf("Grid 2 finishes solving of iteration %d.", k);
+            fflush(stdout);
         }
 
         rr += r;
@@ -1524,6 +1532,13 @@ void fadi_sp_2sided(superlu_dist_options_t options, int_t m_A, double *A,
                 localS[j] = compressS[j];
             }
             SUPERLU_FREE(compressS);
+
+            printf("Grid 1 finishes recompression of iteration %d.", k);
+            fflush(stdout);
+        }
+        if (grid_C->iam == 0) {
+            printf("Grid 2 finishes recompression of iteration %d.", k);
+            fflush(stdout);
         }
 
         // printf("proc %d in B and %d in C gets recompression for iteration %d done.\n", grid_B->iam, grid_C->iam, k);
