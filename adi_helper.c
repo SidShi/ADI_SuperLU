@@ -3410,7 +3410,6 @@ void dconvertTT_tensor_2grids_sep(double **TTcores_global, gridinfo_t *grid1, gr
         for (k = 0; k < d-sep; ++k) {
             SUPERLU_FREE(TTcore_from2[k]);
         }
-        SUPERLU_FREE(TTcore_from2);
     }
 
     SUPERLU_FREE(TTcore_col);
