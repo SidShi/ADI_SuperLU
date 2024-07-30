@@ -68,7 +68,6 @@ int main(int argc, char *argv[])
     npcol1 = 1;  /* Default process columns.   */
     nprow2 = 1;  /* Default process rows.      */
     npcol2 = 1;  /* Default process columns.   */
-    rep = 0;
     lookahead = -1;
     colperm = -1;
     rowperm = -1;
