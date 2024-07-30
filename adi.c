@@ -1424,7 +1424,7 @@ void fadi_sp_2sided(superlu_dist_options_t options, int_t m_A, double *A,
             }
         }
 
-        adi_ls(options, m_D, D, m_C, nnz_C, nzval_C, rowind_C, colptr_C, grid_C, rhs_C, ldly, r, -p[0], ld, ud, lc, uc, iterY);
+        adi_ls(options, m_D, D, m_C, nnz_C, nzval_C, rowind_C, colptr_C, grid_C, rhs_C, ldly, r, p[0], ld, ud, lc, uc, iterY);
 
         for (k = 0; k < r; ++k) {
             for (j = 0; j < ldly; ++j) {
@@ -1474,7 +1474,7 @@ void fadi_sp_2sided(superlu_dist_options_t options, int_t m_A, double *A,
                 }
             }
 
-            adi_ls(options, m_D, D, m_C, nnz_C, nzval_C, rowind_C, colptr_C, grid_C, rhs_C, ldly, r, -p[k], ld, ud, lc, uc, tmp_iterY);
+            adi_ls(options, m_D, D, m_C, nnz_C, nzval_C, rowind_C, colptr_C, grid_C, rhs_C, ldly, r, p[k], ld, ud, lc, uc, tmp_iterY);
 
             for (k = 0; k < r; ++k) {
                 for (j = 0; j < ldly; ++j) {
@@ -3365,7 +3365,7 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
         dallocateA_dist(ms_rev[deal-1], nnzs[deal-1], &nzval_neg2, &rowind_neg2, &colptr_neg2);
         for (i = 0; i < ms_rev[deal-1]; ++i) {
             for (j = colptrs[deal-1][i]; j < colptrs[deal-1][i+1]; ++j) {
-                nzval_neg2[j] = -nzvals[deal-1][j];
+                nzval_neg2[j] = nzvals[deal-1][j];
                 rowind_neg2[j] = rowinds[deal-1][j];
             }
             colptr_neg2[i] = colptrs[deal-1][i];
@@ -3373,6 +3373,10 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
         colptr_neg2[ms_rev[deal-1]] = colptrs[deal-1][ms_rev[deal-1]];
 
         dmult_TTfADI_RHS_alt(ms_rev, rs_rev, locals[deal-1], deal-1, Vs[deal-1], nrhss[deal-1], TTcores_rev_global, &(newV[deal-2]));
+
+        for (j = 0; j < rs_rev[deal-2]*rs_rev[deal-2]; ++j) {
+            newB[deal-2][j] = -newB[deal-2][j];
+        }
 
         MPI_Barrier(grid2->comm);
     }
