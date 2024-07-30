@@ -3142,10 +3142,10 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
         MPI_Bcast(TTcores_global[0], ms[0]*rr1, MPI_DOUBLE, 0, grid1->comm);
         MPI_Bcast(newA[0], rr1*rr1, MPI_DOUBLE, 0, grid1->comm);
 
-        if (grid1->iam == 0) {
-            printf("Grid 1 finishes entire first iteration!\n");
-            fflush(stdout);
-        }
+        // if (grid1->iam == 0) {
+        //     printf("Grid 1 finishes entire first iteration!\n");
+        //     fflush(stdout);
+        // }
     }
     if (grid1->iam == 0) {
         MPI_Send(&rr1, 1, MPI_INT, grid_proc[0], 0, MPI_COMM_WORLD);
@@ -3169,7 +3169,7 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
         }
         colptr_dup1[ms_rev[0]] = colptrs[0][ms_rev[0]];
 
-        fadi_col(options, ms_rev[0], nnzs[0], nzval_dup1, rowind_dup1, colptr_dup1, grid1, Vs[0], locals[0], 
+        fadi_col(options, ms_rev[0], nnzs[0], nzval_dup1, rowind_dup1, colptr_dup1, grid2, Vs[0], locals[0], 
             ps[0], qs[0], ls[0], tol, &(TTcores_rev[0]), nrhss[0], &rr1);
         rs[d-2] = rr1;
         rs_rev[0] = rr1;
