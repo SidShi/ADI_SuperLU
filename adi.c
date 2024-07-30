@@ -3385,7 +3385,7 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
             ms_rev[deal-1], nnzs[deal-1], nzval_neg2, rowind_neg2, colptr_neg2, rs_rev[deal-2], newB[deal-2], grid1, grid2, 
             newU[deal-2], rs[deal-2]*locals[deal-1], newV[deal-2], rs_rev[deal-2]*locals[deal-1], ps[deal-1], qs[deal-1], ls[deal-1], 
             tol, &(TTcores[deal-1]), &(TTcores[deal]), nrhss[deal-1], &rr1, las[deal-2], uas[deal-2], lbs[deal-2], ubs[deal-2], 
-            las[deal-2], uas[deal-2], lbs[deal-2], ubs[deal-2], grid_proc, 0, 1);
+            lbs[deal-2], ubs[deal-2], las[deal-2], uas[deal-2], grid_proc, 0, 1);
         rs[deal-1] = rr1;
 
         if (grid1->iam == 0) {
