@@ -4187,7 +4187,7 @@ void dcheck_error_TT_2grids_alt(int_t *ms, int_t *nnzs, double **nzvals, int_t *
 }
 
 void dcheck_error_TT_2grids_sep(int_t *ms, int_t *nnzs, double **nzvals, int_t **rowinds, int_t **colptrs, gridinfo_t *grid1, gridinfo_t *grid2,
-    int *rs, int *locals, int d, int sep, double *F, double **TTcores, double *trueX, int *grid_proc, int grid_main)
+    int *rs, int *locals, int d, int sep, double *F, double **TTcores, double *trueX, int *grid_proc)
 {
     int *aug_rs;
     char transpose[1];
