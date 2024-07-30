@@ -1368,7 +1368,7 @@ void fadi_sp_2sided(superlu_dist_options_t options, int_t m_A, double *A,
     int ldz, ldy, info;
     int ldlz, ldly;
     int rr;
-    int_t i, j, k;
+    int_t i, j, k, w;
     
     ldz = ldu;
     ldy = ldv;
@@ -1466,21 +1466,21 @@ void fadi_sp_2sided(superlu_dist_options_t options, int_t m_A, double *A,
             }
         }
         if (grid_C->iam != -1) {
-            for (k = 0; k < r; ++k) {
+            for (w = 0; w < r; ++w) {
                 for (j = 0; j < m_D; ++j) {
                     for (i = 0; i < ldly; ++i) {
-                        rhs_C[k*ldy+j*ldly+i] = -(p[k]-q[k-1])*iterY[k*ldy+i*m_D+j];
+                        rhs_C[w*ldy+j*ldly+i] = -(p[k]-q[k-1])*iterY[w*ldy+i*m_D+j];
                     }
                 }
             }
 
             adi_ls(options, m_D, D, m_C, nnz_C, nzval_C, rowind_C, colptr_C, grid_C, rhs_C, ldly, r, p[k], ld, ud, lc, uc, tmp_iterY);
 
-            for (k = 0; k < r; ++k) {
+            for (w = 0; w < r; ++w) {
                 for (j = 0; j < ldly; ++j) {
                     for (i = 0; i < m_D; ++i) {
-                        iterY[k*ldy+i*ldly+j] += tmp_iterY[k*ldy+i*ldly+j];
-                        localY[rr*ldv+k*ldv+j*m_D+i] = iterY[k*ldy+i*ldly+j];
+                        iterY[w*ldy+i*ldly+j] += tmp_iterY[w*ldy+i*ldly+j];
+                        localY[rr*ldv+k*ldv+j*m_D+i] = iterY[w*ldy+i*ldly+j];
                     }
                 }
             }
