@@ -3189,7 +3189,7 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
         rs[d-2] = rr1;
         rs_rev[0] = rr1;
 
-        if ( !(TTcores[d-1] = doubleMalloc_dist(ms_rev[0]*rr1)) )
+        if ( !(TTcores[d-1] = doubleMalloc_dist(locals[0]*rr1)) )
             ABORT("Malloc fails for TTcores[d-1][].");
         for (j = 0; j < locals[0]; ++j) {
             for (i = 0; i < rr1; ++i) {
@@ -3387,13 +3387,13 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
         }
         colptr_neg2[ms_rev[deal-1]] = colptrs[deal-1][ms_rev[deal-1]];
 
-        dmult_TTfADI_RHS_alt(ms_rev, rs_rev, locals[deal-1], deal-1, Vs[deal-1], nrhss[deal-1], TTcores_rev_global, &(newV[deal-2]));
+        dmult_TTfADI_RHS(ms_rev, rs_rev, locals[deal-1], deal-1, Vs[deal-1], nrhss[deal-1], TTcores_rev_global, &(newV[deal-2]));
 
         if ( !(newBT = doubleMalloc_dist(rs_rev[deal-2]*rs_rev[deal-2])) )
             ABORT("Malloc fails for newBT[].");
         for (j = 0; j < rs_rev[deal-2]; ++j) {
             for (i = 0; i < rs_rev[deal-2]; ++i) {
-                newBT[j*rs_rev[deal-2]+i] = -newB[deal-2][i*rs_rev[deal-2]+j];
+                newBT[j*rs_rev[deal-2]+i] = -newB[deal-2][j*rs_rev[deal-2]+i];
             }
         }
 
