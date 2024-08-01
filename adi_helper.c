@@ -4215,8 +4215,8 @@ void dcheck_error_TT_2grids_sep(int_t *ms, int_t *nnzs, double **nzvals, int_t *
     TTcores_global = (double **) SUPERLU_MALLOC(d*sizeof(double*));
     dgather_TTcores_2grids_sep(TTcores, grid1, grid2, ms, rs, locals, d, sep, TTcores_global);
 
-    printf("Proc %d in Grid1 and %d in Grid2 finish gathering global cores!\n", grid1->iam, grid2->iam);
-    fflush(stdout);
+    // printf("Proc %d in Grid1 and %d in Grid2 finish gathering global cores!\n", grid1->iam, grid2->iam);
+    // fflush(stdout);
 
     if (grid1->iam == 0) {
         if ( !(X = doubleMalloc_dist(nelem)) )
@@ -4232,8 +4232,8 @@ void dcheck_error_TT_2grids_sep(int_t *ms, int_t *nnzs, double **nzvals, int_t *
     }
     dconvertTT_tensor_2grids_sep(TTcores_global, grid1, grid2, ms, rs, locals, d, sep, X, grid_proc);
 
-    printf("Proc %d in Grid1 and %d in Grid2 finish building X!\n", grid1->iam, grid2->iam);
-    fflush(stdout);
+    // printf("Proc %d in Grid1 and %d in Grid2 finish building X!\n", grid1->iam, grid2->iam);
+    // fflush(stdout);
 
     for (t = 0; t < d; ++t) {
         double **TTcores_update = (double **) SUPERLU_MALLOC(d*sizeof(double*));

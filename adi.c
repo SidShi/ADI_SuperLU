@@ -1576,9 +1576,11 @@ void fadi_sp_2sided(superlu_dist_options_t options, int_t m_A, double *A,
         if ( !(*Y = doubleMalloc_dist(ldv*rr)) )
             ABORT("Malloc fails for *Y[].");
 
-        for (j = 0; j < ldv; ++j) {
-            for (i = 0; i < rr; ++i) {
-                (*Y)[j*rr+i] = localY[i*ldv+j];
+        for (j = 0; j < m_D; ++j) {
+            for (i = 0; i < ldly; ++i) {
+                for (w = 0; w < rr; ++w) {
+                    (*Y)[(j*ldly+i)*rr+w] = localY[w*ldy+i*m_D+j];
+                }
             }
         }
     }
