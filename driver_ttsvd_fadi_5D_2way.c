@@ -359,6 +359,20 @@ int main(int argc, char *argv[])
         printf("Successfully generate 2 grids.\n");
         fflush(stdout);
     }
+
+    int    dim = 5;
+    int    deal;
+    if (iam1 != -1) { deal = 3; }
+    if (iam2 != -1) { deal = 2; }
+    int    ms[dim], ms_rev[dim], rs[dim-1], locals[deal], locals_alt[dim], nrhss[dim-1], nrhss_rev[dim-1], nnzs[deal], nnzs_alt[dim];
+    double *nzvals[deal], *nzvals_alt[dim];
+    int_t  *rowinds[deal], *colptrs[deal], *rowinds_alt[dim], *colptrs_alt[dim];
+    double *pps[deal], *qqs[deal];
+    double *TTcores[dim];
+    double *Us[deal], *Vs[deal];
+    double las_all[dim-2], uas_all[dim-2], lbs_all[dim-2], ubs_all[dim-2];
+    double las[deal-1], uas[deal-1], lbs[deal-1], ubs[deal-1];
+    int_t lls[deal];
     
     // printf("Global rank is %d, id in grid_A is %d, id in grid_B is %d, it has A comm %d, and it has B comm %d.\n", 
     //     global_rank, grid_A.iam, grid_B.iam, grid_A.comm != MPI_COMM_NULL, grid_B.comm != MPI_COMM_NULL);
@@ -413,20 +427,6 @@ int main(int argc, char *argv[])
 
     suffix = &(postfix[1]);
     // printf("%s\n", postfix);
-
-    int    dim = 5;
-    int    deal;
-    if (iam1 != -1) { deal = 3; }
-    if (iam2 != -1) { deal = 2; }
-    int    ms[dim], ms_rev[dim], rs[dim-1], locals[deal], locals_alt[dim], nrhss[dim-1], nrhss_rev[dim-1], nnzs[deal], nnzs_alt[dim];
-    double *nzvals[deal], *nzvals_alt[dim];
-    int_t  *rowinds[deal], *colptrs[deal], *rowinds_alt[dim], *colptrs_alt[dim];
-    double *pps[deal], *qqs[deal];
-    double *TTcores[dim];
-    double *Us[deal], *Vs[deal];
-    double las_all[dim-2], uas_all[dim-2], lbs_all[dim-2], ubs_all[dim-2];
-    double las[deal-1], uas[deal-1], lbs[deal-1], ubs[deal-1];
-    int_t lls[deal];
 
     /* ------------------------------------------------------------
        GET THE RIGHT HAND SIDE, SHIFT PARAMETERS, AND TRUE SOLUTION FROM FILE.
