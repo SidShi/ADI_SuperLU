@@ -10,8 +10,8 @@ DRIVERS+=fadi_ttsvd_5d_rep fadi_ttsvd_5d_2way
 CC=cc
 
 .PHONY: all
-all: adi_mat fadi_mat adi_mat_shifts fadi_ttsvd_3d fadi_ttsvd_3d_2grids fadi_ttsvd_3d_rep fadi_para_ttsvd_3d\ 
-fadi_ttsvd_4d fadi_ttsvd_4d_rep fadi_ttsvd_4d_2way fadi_ttsvd_5d_rep fadi_ttsvd_5d_2way
+all: adi_mat fadi_mat adi_mat_shifts fadi_ttsvd_3d fadi_ttsvd_3d_2grids fadi_ttsvd_3d_rep fadi_para_ttsvd_3d
+all: fadi_ttsvd_4d fadi_ttsvd_4d_rep fadi_ttsvd_4d_2way fadi_ttsvd_5d_rep fadi_ttsvd_5d_2way
 
 adi_mat: driver_adi.o adi.o adi_grid.o adi_helper.o read_equation.o
 	$(CC) -o $@ $^ $(ISUPERLU) $(LSUPERLU) $(LIBSUPERLU)
