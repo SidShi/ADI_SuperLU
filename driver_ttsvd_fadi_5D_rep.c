@@ -505,7 +505,7 @@ int main(int argc, char *argv[])
     
     if (iam1 != -1) {
         dread_RHS_factor(fp_U1, &(Us[0]), &grid1, &mm, &rr, &(locals1[0]), &U1_global);
-        locals2[3] = locals1[0];
+        locals2[4] = locals1[0];
         // printf("Grid_A proc %d gets first and last element of U to be %f and %f.\n", iam_A, U[0], U[ldu*r-1]);
         // fflush(stdout);
     
@@ -525,7 +525,7 @@ int main(int argc, char *argv[])
 
     if (iam2 != -1) {
         dread_RHS_factor(fp_V1, &(Vs[0]), &grid2, &mm, &rr, &(locals2[0]), &V1_global);
-        locals1[3] = locals2[0];
+        locals1[4] = locals2[0];
         // printf("Grid_A proc %d gets first and last element of U to be %f and %f.\n", iam_A, U[0], U[ldu*r-1]);
         // fflush(stdout);
     
