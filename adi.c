@@ -1476,7 +1476,7 @@ void fadi_sp_2sided(superlu_dist_options_t options, int_t m_A, double *A,
                 for (j = 0; j < m_D; ++j) {
                     for (i = 0; i < ldly; ++i) {
                         iterY[w*ldy+i*m_D+j] += tmp_iterY[w*ldy+i*m_D+j];
-                        localY[rr*ldv+k*ldv+j*ldly+i] = iterY[w*ldy+i*m_D+j];
+                        localY[rr*ldv+w*ldv+j*ldly+i] = iterY[w*ldy+i*m_D+j];
                     }
                 }
             }
