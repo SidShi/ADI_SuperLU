@@ -1416,20 +1416,18 @@ void fadi_sp_2sided(superlu_dist_options_t options, int_t m_A, double *A,
         }
     }
     if (grid_C->iam != -1) {
-        for (k = 0; k < r; ++k) {
-            for (j = 0; j < m_D; ++j) {
-                for (i = 0; i < ldly; ++i) {
-                    rhs_C[k*ldv+j*ldly+i] = V[k*ldv+j*ldly+i];
-                }
+        for (j = 0; j < r; ++j) {
+            for (i = 0; i < ldv; ++i) {
+                rhs_C[j*ldv+i] = V[j*ldv+i];
             }
         }
 
         adi_ls(options, m_D, D, m_C, nnz_C, nzval_C, rowind_C, colptr_C, grid_C, rhs_C, ldly, r, p[0], ld, ud, lc, uc, iterY);
 
         for (k = 0; k < r; ++k) {
-            for (j = 0; j < ldly; ++j) {
-                for (i = 0; i < m_D; ++i) {
-                    localY[k*ldv+j*m_D+i] = iterY[k*ldv+i*ldly+j];
+            for (j = 0; j < m_D; ++j) {
+                for (i = 0; i < ldly; ++i) {
+                    localY[k*ldv+j*ldly+i] = iterY[k*ldv+i*m_D+j];
                 }
             }
         }
@@ -1466,21 +1464,19 @@ void fadi_sp_2sided(superlu_dist_options_t options, int_t m_A, double *A,
             }
         }
         if (grid_C->iam != -1) {
-            for (w = 0; w < r; ++w) {
-                for (j = 0; j < m_D; ++j) {
-                    for (i = 0; i < ldly; ++i) {
-                        rhs_C[w*ldy+j*ldly+i] = (p[k]-q[k-1])*iterY[w*ldy+j*ldly+i];
-                    }
+            for (j = 0; j < r; ++j) {
+                for (i = 0; i < ldv; ++i) {
+                    rhs_C[j*ldv+i] = (p[k]-q[k-1])*iterY[j*ldv+i];
                 }
             }
-
+            
             adi_ls(options, m_D, D, m_C, nnz_C, nzval_C, rowind_C, colptr_C, grid_C, rhs_C, ldly, r, p[k], ld, ud, lc, uc, tmp_iterY);
 
             for (w = 0; w < r; ++w) {
-                for (j = 0; j < ldly; ++j) {
-                    for (i = 0; i < m_D; ++i) {
-                        iterY[w*ldy+i*ldly+j] += tmp_iterY[w*ldy+i*ldly+j];
-                        localY[rr*ldv+k*ldv+j*m_D+i] = iterY[w*ldy+i*ldly+j];
+                for (j = 0; j < m_D; ++j) {
+                    for (i = 0; i < ldly; ++i) {
+                        iterY[w*ldy+i*m_D+j] += tmp_iterY[w*ldy+i*m_D+j];
+                        localY[rr*ldv+k*ldv+j*ldly+i] = iterY[w*ldy+i*m_D+j];
                     }
                 }
             }
