@@ -100,13 +100,17 @@ fi
 # srun -n 12 ./fadi_para_ttsvd_3d -r 2 -c 2 -w 2 -v 2 -m 2 -n 2 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_para_TTSVD_3D_test/
 
 ### fADI TTSVD 4D test
-# srun -n 2 ./fadi_ttsvd_md -r 1 -c 1 -w 1 -v 1 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_test_small/
-# srun -n 8 ./fadi_ttsvd_md -r 2 -c 2 -w 2 -v 2 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_test/
+# srun -n 2 ./fadi_ttsvd_4d -r 1 -c 1 -w 1 -v 1 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_test_small/
+# srun -n 8 ./fadi_ttsvd_4d -r 2 -c 2 -w 2 -v 2 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_test/
 
 ### fADI TTSVD 4D rep test
-# srun -n 2 ./fadi_ttsvd_md_rep -r 1 -c 1 -w 1 -v 1 -t 0 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_rep_test_small/
-# srun -n 8 ./fadi_ttsvd_md_rep -r 2 -c 2 -w 2 -v 2 -t 0 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_rep_test/
+# srun -n 2 ./fadi_ttsvd_4d_rep -r 1 -c 1 -w 1 -v 1 -t 0 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_rep_test_small/
+# srun -n 8 ./fadi_ttsvd_4d_rep -r 2 -c 2 -w 2 -v 2 -t 0 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_rep_test/
 
 ### fADI TTSVD 4D 2way test
-# srun -n 2 ./fadi_ttsvd_md_2way -r 1 -c 1 -w 1 -v 1 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_2way_test_small/
-# srun -n 8 ./fadi_ttsvd_md_2way -r 2 -c 2 -w 2 -v 2 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_2way_test/
+# srun -n 2 ./fadi_ttsvd_4d_2way -r 1 -c 1 -w 1 -v 1 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_2way_test_small/
+# srun -n 8 ./fadi_ttsvd_4d_2way -r 2 -c 2 -w 2 -v 2 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_4D_2way_test/
+
+### fADI TTSVD 5D test
+# srun -n 2 ./fadi_ttsvd_5d_rep -r 1 -c 1 -w 1 -v 1 -t 0 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_5D_test_small/
+# srun -n 2 ./fadi_ttsvd_5d_2way -r 1 -c 1 -w 1 -v 1 -f .dat /global/cfs/cdirs/m2957/tianyi/matrix/fADI_TTSVD_5D_test_small/

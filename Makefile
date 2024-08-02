@@ -3,12 +3,15 @@ LDIR=/global/cfs/cdirs/m2957/tianyi/superlu_dist/build/lib
 LIBSUPERLU=-lsuperlu_dist
 ISUPERLU=-I$(IDIR)
 LSUPERLU=-L$(LDIR)
-DRIVERS=adi_mat fadi_mat adi_mat_shifts fadi_ttsvd_3d fadi_ttsvd_3d_2grids fadi_ttsvd_3d_rep fadi_para_ttsvd_3d fadi_ttsvd_md fadi_ttsvd_md_rep fadi_ttsvd_md_2way
+DRIVERS=adi_mat fadi_mat adi_mat_shifts fadi_ttsvd_3d fadi_ttsvd_3d_2grids fadi_ttsvd_3d_rep fadi_para_ttsvd_3d
+DRIVERS+=fadi_ttsvd_4d fadi_ttsvd_4d_rep fadi_ttsvd_4d_2way
+DRIVERS+=fadi_ttsvd_5d_rep fadi_ttsvd_5d_2way
 
 CC=cc
 
 .PHONY: all
-all: adi_mat fadi_mat adi_mat_shifts fadi_ttsvd_3d fadi_ttsvd_3d_2grids fadi_ttsvd_3d_rep fadi_para_ttsvd_3d fadi_ttsvd_md fadi_ttsvd_md_rep fadi_ttsvd_md_2way
+all: adi_mat fadi_mat adi_mat_shifts fadi_ttsvd_3d fadi_ttsvd_3d_2grids fadi_ttsvd_3d_rep fadi_para_ttsvd_3d \ 
+	fadi_ttsvd_4d fadi_ttsvd_4d_rep fadi_ttsvd_4d_2way fadi_ttsvd_5d_rep fadi_ttsvd_5d_2way
 
 adi_mat: driver_adi.o adi.o adi_grid.o adi_helper.o read_equation.o
 	$(CC) -o $@ $^ $(ISUPERLU) $(LSUPERLU) $(LIBSUPERLU)
@@ -31,13 +34,19 @@ fadi_ttsvd_3d_rep: driver_ttsvd_fadi_rep.o adi.o adi_grid.o adi_helper.o read_eq
 fadi_para_ttsvd_3d: driver_para_ttsvd_fadi.o adi.o adi_grid.o adi_helper.o read_equation.o
 	$(CC) -o $@ $^ $(ISUPERLU) $(LSUPERLU) $(LIBSUPERLU)
 
-fadi_ttsvd_md: driver_ttsvd_fadi_multiD.o adi.o adi_grid.o adi_helper.o read_equation.o
+fadi_ttsvd_4d: driver_ttsvd_fadi_4D.o adi.o adi_grid.o adi_helper.o read_equation.o
 	$(CC) -o $@ $^ $(ISUPERLU) $(LSUPERLU) $(LIBSUPERLU)
 
-fadi_ttsvd_md_rep: driver_ttsvd_fadi_multiD_rep.o adi.o adi_grid.o adi_helper.o read_equation.o
+fadi_ttsvd_4d_rep: driver_ttsvd_fadi_4D_rep.o adi.o adi_grid.o adi_helper.o read_equation.o
 	$(CC) -o $@ $^ $(ISUPERLU) $(LSUPERLU) $(LIBSUPERLU)
 
-fadi_ttsvd_md_2way: driver_ttsvd_fadi_multiD_2way.o adi.o adi_grid.o adi_helper.o read_equation.o
+fadi_ttsvd_4d_2way: driver_ttsvd_fadi_4D_2way.o adi.o adi_grid.o adi_helper.o read_equation.o
+	$(CC) -o $@ $^ $(ISUPERLU) $(LSUPERLU) $(LIBSUPERLU)
+
+fadi_ttsvd_5d_rep: driver_ttsvd_fadi_5D_rep.o adi.o adi_grid.o adi_helper.o read_equation.o
+	$(CC) -o $@ $^ $(ISUPERLU) $(LSUPERLU) $(LIBSUPERLU)
+
+fadi_ttsvd_5d_2way: driver_ttsvd_fadi_5D_2way.o adi.o adi_grid.o adi_helper.o read_equation.o
 	$(CC) -o $@ $^ $(ISUPERLU) $(LSUPERLU) $(LIBSUPERLU)
 
 adi.o: adi.c adi.h adi_helper.h
@@ -73,13 +82,19 @@ driver_ttsvd_fadi_rep.o: driver_ttsvd_fadi_rep.c adi.h adi_grid.h read_equation.
 driver_para_ttsvd_fadi.o: driver_ttsvd_para_fadi.c adi.h adi_grid.h read_equation.h
 	$(CC) -c -o $@ $< $(ISUPERLU) $(LSUPERLU) $(LIBSUPERLU)
 
-driver_ttsvd_fadi_multiD.o: driver_ttsvd_fadi_multiD.c adi.h adi_grid.h read_equation.h
+driver_ttsvd_fadi_4D.o: driver_ttsvd_fadi_4D.c adi.h adi_grid.h read_equation.h
 	$(CC) -c -o $@ $< $(ISUPERLU) $(LSUPERLU) $(LIBSUPERLU)
 
-driver_ttsvd_fadi_multiD_rep.o: driver_ttsvd_fadi_multiD_rep.c adi.h adi_grid.h read_equation.h
+driver_ttsvd_fadi_4D_rep.o: driver_ttsvd_fadi_4D_rep.c adi.h adi_grid.h read_equation.h
 	$(CC) -c -o $@ $< $(ISUPERLU) $(LSUPERLU) $(LIBSUPERLU)
 
-driver_ttsvd_fadi_multiD_2way.o: driver_ttsvd_fadi_multiD_2way.c adi.h adi_grid.h read_equation.h
+driver_ttsvd_fadi_4D_2way.o: driver_ttsvd_fadi_4D_2way.c adi.h adi_grid.h read_equation.h
+	$(CC) -c -o $@ $< $(ISUPERLU) $(LSUPERLU) $(LIBSUPERLU)
+
+driver_ttsvd_fadi_5D_rep.o: driver_ttsvd_fadi_5D_rep.c adi.h adi_grid.h read_equation.h
+	$(CC) -c -o $@ $< $(ISUPERLU) $(LSUPERLU) $(LIBSUPERLU)
+
+driver_ttsvd_fadi_5D_2way.o: driver_ttsvd_fadi_5D_2way.c adi.h adi_grid.h read_equation.h
 	$(CC) -c -o $@ $< $(ISUPERLU) $(LSUPERLU) $(LIBSUPERLU)
 
 .PHONY: clean
