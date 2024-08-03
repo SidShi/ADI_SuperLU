@@ -621,7 +621,7 @@ int main(int argc, char *argv[])
             }
             colptrs_alt[3][i] = colptrs[1][i];
         }
-        colptrs_alt[3][m_D] = colptrs[1][m_C];
+        colptrs_alt[3][m_D] = colptrs[1][m_D];
     }
 
     dread_matrix(fp_E, suffix, &grid2, &mm, &rr, &(nnzs[0]), &(nzvals[0]), &(rowinds[0]), &(colptrs[0]));
