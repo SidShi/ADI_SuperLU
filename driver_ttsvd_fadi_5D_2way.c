@@ -639,7 +639,7 @@ int main(int argc, char *argv[])
             }
             colptrs_alt[4][i] = colptrs[0][i];
         }
-        colptrs_alt[4][m_E] = colptrs[4][m_E];
+        colptrs_alt[4][m_E] = colptrs[0][m_E];
     }
 
     MPI_Barrier(MPI_COMM_WORLD);
