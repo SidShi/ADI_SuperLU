@@ -538,12 +538,12 @@ int main(int argc, char *argv[])
 
     if (iam2 != -1) {
         dread_RHS_factor(fp_V1, &(Vs[0]), &grid2, &mm, &rr, &(locals[0]), &V1_global);
-        locals_alt[3] = locals[0];
+        locals_alt[4] = locals[0];
         // printf("Grid_A proc %d gets first and last element of U to be %f and %f.\n", iam_A, U[0], U[ldu*r-1]);
         // fflush(stdout);
     
         dread_RHS_factor_multidim(fp_V2, &(Vs[1]), &grid2, ms_rev, 1, &(locals[1]), &V2_global);
-        locals_alt[2] = locals[1];
+        locals_alt[3] = locals[1];
         // printf("Grid_B proc %d gets first and last element of V to be %f and %f.\n", iam_B, V[0], V[ldv*r-1]);
         // fflush(stdout);
 
