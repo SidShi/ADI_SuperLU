@@ -677,7 +677,7 @@ int main(int argc, char *argv[])
         fflush(stdout);
     }
     printf("Proc %d in Grid1 and %d in Grid2 gets TT rank %d, %d, %d, %d!\n", 
-        grid1->iam, grid2->iam, rs[0], rs[1], rs[2], rs[3]);
+        iam1, iam2, rs[0], rs[1], rs[2], rs[3]);
     fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
 
