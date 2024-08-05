@@ -3096,12 +3096,20 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
     char transpose[1];
     *transpose = 'N';
     int_t i, j, k, l;
-    int rr1, deal;
+    int rr1, deal, dealcommon, gr1extra, gr1deal;
 
     deal = d/2;
-    if ((grid1->iam != -1) && (d % 2 == 1)) {
-        deal++;
+    dealcommon = deal;
+    gr1extra = 0;
+    gr1deal = deal;
+    if (d % 2 == 1) {
+        gr1extra = 1;
+        gr1deal = deal+1;
+        if (grid1->iam != -1) {
+            deal++;
+        }
     }
+    
     double *TTcores_rev[deal-1];
     int_t ms_rev[d];
     int rs_rev[d-1];
@@ -3165,19 +3173,10 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
         //     printf("Grid 1 finishes entire first iteration!\n");
         //     fflush(stdout);
         // }
-    }
-    if (grid1->iam == 0) {
-        MPI_Send(&rr1, 1, MPI_INT, grid_proc[0], 0, MPI_COMM_WORLD);
-    }
-    else if (grid2->iam == 0) {
-        MPI_Recv(&rr1, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Barrier(grid1->comm);
     }
 
     if (grid2->iam != -1) {
-        MPI_Bcast(&rr1, 1, MPI_INT, 0, grid2->comm);
-        rs[0] = rr1;
-        rs_rev[d-2] = rr1;
-
         dallocateA_dist(ms_rev[0], nnzs[0], &nzval_dup1, &rowind_dup1, &colptr_dup1);
         for (i = 0; i < ms_rev[0]; ++i) {
             for (j = colptrs[0][i]; j < colptrs[0][i+1]; ++j) {
@@ -3228,17 +3227,35 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
 
         MPI_Bcast(TTcores_rev_global[0], ms_rev[0]*rr1, MPI_DOUBLE, 0, grid2->comm);
         MPI_Bcast(newB[0], rr1*rr1, MPI_DOUBLE, 0, grid2->comm);
-    }  
-    if (grid2->iam == 0) {
-        MPI_Send(&rr1, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+
+        MPI_Barrier(grid2->comm);
     }
-    else if (grid1->iam == 0) {
-        MPI_Recv(&rr1, 1, MPI_INT, grid_proc[0], 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    if (grid1->iam == 0) {
+        MPI_Send(&(rs[0]), 1, MPI_INT, grid_proc[0], 0, MPI_COMM_WORLD);
+    }
+    else if (grid2->iam == 0) {
+        MPI_Recv(&(rs[0]), 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+    if (grid2->iam != -1) {
+        MPI_Bcast(&(rs[0]), 1, MPI_INT, 0, grid2->comm);
+        rs_rev[d-2] = rs[0];
+
+        MPI_Barrier(grid2->comm);
     }
     if (grid1->iam != -1) {
-        MPI_Bcast(&rr1, 1, MPI_INT, 0, grid1->comm);
-        rs[d-2] = rr1;
-        rs_rev[0] = rr1;
+        MPI_Barrier(grid1->comm);
+    }
+
+    if (grid2->iam == 0) {
+        MPI_Send(&(rs[d-2]), 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
+    }
+    else if (grid1->iam == 0) {
+        MPI_Recv(&(rs[d-2]), 1, MPI_INT, grid_proc[0], 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
+    if (grid1->iam != -1) {
+        MPI_Bcast(&(rs[d-2]), 1, MPI_INT, 0, grid1->comm);
+        rs_rev[0] = rs[d-2];
 
         MPI_Barrier(grid1->comm);
     }
@@ -3248,7 +3265,7 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
 
     
 
-    for (k = 1; k < deal-1; ++k) {
+    for (k = 1; k < dealcommon-1; ++k) {
         double *nzval_dup2;
         int_t *rowind_dup2, *colptr_dup2;
 
@@ -3288,19 +3305,11 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
 
             MPI_Bcast(TTcores_global[k], rs[k-1]*ms[k]*rr1, MPI_DOUBLE, 0, grid1->comm);
             MPI_Bcast(newA[k], rr1*rr1, MPI_DOUBLE, 0, grid1->comm);
-        }
-        if (grid1->iam == 0) {
-            MPI_Send(&rr1, 1, MPI_INT, grid_proc[0], 0, MPI_COMM_WORLD);
-        }
-        else if (grid2->iam == 0) {
-            MPI_Recv(&rr1, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+            MPI_Barrier(grid1->comm);
         }
 
         if (grid2->iam != -1) {
-            MPI_Bcast(&rr1, 1, MPI_INT, 0, grid2->comm);
-            rs[k] = rr1;
-            rs_rev[d-2-k] = rr1;
-
             dmult_TTfADI_RHS(ms_rev, rs_rev, locals[k], k, Vs[k], nrhss[k], TTcores_rev_global, &(newV[k-1]));
 
             dallocateA_dist(ms_rev[k], nnzs[k], &nzval_dup2, &rowind_dup2, &colptr_dup2);
@@ -3347,21 +3356,101 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
 
             MPI_Bcast(TTcores_rev_global[k], rs_rev[k-1]*ms[k]*rr1, MPI_DOUBLE, 0, grid2->comm);
             MPI_Bcast(newB[k], rr1*rr1, MPI_DOUBLE, 0, grid2->comm);
+
+            MPI_Barrier(grid2->comm);
         }
-        if (grid2->iam == 0) {
-            MPI_Send(&rr1, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+
+        if (grid1->iam == 0) {
+            MPI_Send(&(rs[k]), 1, MPI_INT, grid_proc[0], 0, MPI_COMM_WORLD);
         }
-        else if (grid1->iam == 0) {
-            MPI_Recv(&rr1, 1, MPI_INT, grid_proc[0], 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        else if (grid2->iam == 0) {
+            MPI_Recv(&(rs[k]), 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+        if (grid2->iam != -1) {
+            MPI_Bcast(&(rs[k]), 1, MPI_INT, 0, grid2->comm);
+            rs_rev[d-2-k] = rs[k];
+
+            MPI_Barrier(grid2->comm);
         }
         if (grid1->iam != -1) {
-            MPI_Bcast(&rr1, 1, MPI_INT, 0, grid1->comm);
-            rs_rev[k] = rr1;
-            rs[d-2-k] = rr1;
+            MPI_Barrier(grid1->comm);
+        }
+
+        if (grid2->iam == 0) {
+            MPI_Send(&(rs[d-2-k]), 1, MPI_INT, 0, 1, MPI_COMM_WORLD);
+        }
+        else if (grid1->iam == 0) {
+            MPI_Recv(&(rs[d-2-k]), 1, MPI_INT, grid_proc[0], 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+        if (grid1->iam != -1) {
+            MPI_Bcast(&(rs[d-2-k]), 1, MPI_INT, 0, grid1->comm);
+            rs_rev[k] = rs[d-2-k];
+
             MPI_Barrier(grid1->comm);
         }
         if (grid2->iam != -1) {
             MPI_Barrier(grid2->comm);
+        }
+    }
+
+    if (gr1extra) {
+        if (grid1->iam != -1) {
+            double *nzval_dup2;
+            int_t *rowind_dup2, *colptr_dup2;
+
+            dmult_TTfADI_RHS(ms, rs, locals[deal-2], deal-2, Us[deal-2], nrhss[deal-2], TTcores_global, &(newU[deal-3]));
+
+            dallocateA_dist(ms[deal-2], nnzs[deal-2], &nzval_dup2, &rowind_dup2, &colptr_dup2);
+            for (i = 0; i < ms[deal-2]; ++i) {
+                for (j = colptrs[deal-2][i]; j < colptrs[deal-2][i+1]; ++j) {
+                    nzval_dup2[j] = nzvals[deal-2][j];
+                    rowind_dup2[j] = rowinds[deal-2][j];
+                }
+                colptr_dup2[i] = colptrs[deal-2][i];
+            }
+            colptr_dup2[ms[deal-2]] = colptrs[deal-2][ms[deal-2]];
+
+            fadi_col_adils(options, rs[deal-3], newA[deal-3], ms[deal-2], nnzs[deal-2], nzval_dup2, rowind_dup2, colptr_dup2, grid1, newU[deal-3], locals[deal-2],
+                ps[deal-2], qs[deal-2], ls[deal-2], las[deal-3], uas[deal-3], lbs[deal-3], ubs[deal-3], tol, &(TTcores[deal-2]), nrhss[deal-2], &rr1);
+            rs[deal-2] = rr1;
+            rs_rev[d-deal] = rr1;
+
+            if ( !(TTcores_global[deal-2] = doubleMalloc_dist(rs[deal-3]*ms[deal-2]*rr1)) )
+                ABORT("Malloc fails for TTcores_global[deal-2][].");
+            if ( !(newA[deal-2] = doubleMalloc_dist(rr1*rr1)) )
+                ABORT("Malloc fails for newA[deal-2][].");
+
+            if (grid1->iam == 0) {
+                printf("Grid 1 finishes fadi_col for dimension %d with TT rank %d!\n", deal-1, rr1);
+                fflush(stdout);
+            }
+
+            dgather_X(TTcores[deal-2], rs[deal-3]*locals[deal-2], TTcores_global[deal-2], rs[deal-3]*ms[deal-2], rr1, grid1);
+            if (grid1->iam == 0) {
+                dmult_TTfADI_mat(rs[deal-3], newA[deal-3], ms[deal-2], nnzs[deal-2], nzval_dup2, rowind_dup2, colptr_dup2,
+                    TTcores_global[deal-2], rr1, newA[deal-2]);
+            }
+
+            MPI_Bcast(TTcores_global[deal-2], rs[deal-3]*ms[deal-2]*rr1, MPI_DOUBLE, 0, grid1->comm);
+            MPI_Bcast(newA[deal-2], rr1*rr1, MPI_DOUBLE, 0, grid1->comm);
+
+            MPI_Barrier(grid1->comm);
+        }
+
+        if (grid1->iam == 0) {
+            MPI_Send(&(rs[deal-2]), 1, MPI_INT, grid_proc[0], 0, MPI_COMM_WORLD);
+        }
+        else if (grid2->iam == 0) {
+            MPI_Recv(&(rs[gr1deal-2]), 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+        if (grid2->iam != -1) {
+            MPI_Bcast(&(rs[gr1deal-2]), 1, MPI_INT, 0, grid2->comm);
+            rs_rev[d-gr1deal] = rs[gr1deal-2];
+
+            MPI_Barrier(grid2->comm);
+        }
+        if (grid1->iam != -1) {
+            MPI_Barrier(grid1->comm);
         }
     }
 
@@ -3409,7 +3498,7 @@ void fadi_ttsvd_2way(superlu_dist_options_t options, int d, int_t *ms, int_t *nn
             newU[deal-2], rs[deal-2]*locals[deal-1], newV[deal-2], rs_rev[deal-2]*locals[deal-1], ps[deal-1], qs[deal-1], ls[deal-1], 
             tol, &(TTcores[deal-1]), &(TTcores[deal]), nrhss[deal-1], &rr1, las[deal-2], uas[deal-2], lbs[deal-2], ubs[deal-2], 
             las[deal-2], uas[deal-2], lbs[deal-2], ubs[deal-2], grid_proc, 0, 1);
-        rs[deal-1] = rr1;
+        rs[gr1deal-1] = rr1;
 
         if (grid1->iam == 0) {
             printf("Grid 1 and 2 finish final fadi_sp!\n");
