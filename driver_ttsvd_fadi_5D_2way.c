@@ -687,7 +687,8 @@ int main(int argc, char *argv[])
        CHECK ACCURACY OF REPRODUCED RHS.
        ------------------------------------------------------------*/
 
-    dcheck_error_TT_2grids_sep(ms, nnzs_alt, nzvals_alt, rowinds_alt, colptrs_alt, &grid1, &grid2, rs, locals_alt, dim, deal, 
+    int gr1deal = 3;
+    dcheck_error_TT_2grids_sep(ms, nnzs_alt, nzvals_alt, rowinds_alt, colptrs_alt, &grid1, &grid2, rs, locals_alt, dim, gr1deal, 
         trueF_global, TTcores, trueX_global, grid_proc);
     
     // printf("id in grid_A is %d, id in grid_B is %d, id in grid_C is %d, finishes checking errors.\n", 
