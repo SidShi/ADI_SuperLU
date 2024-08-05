@@ -33,16 +33,19 @@ int main(int argc, char *argv[])
     gridinfo_t grid1, grid2;
     gridinfo_t **grids;
     int    dim = 5;
-    int    deal = 3;
-    int    ms[dim], ms_rev[dim], rs[dim-1], locals[deal], locals_alt[dim], nrhss[dim-1], nrhss_rev[dim-1], nnzs[deal], nnzs_alt[dim];
-    double *nzvals[deal], *nzvals_alt[dim];
-    int_t  *rowinds[deal], *colptrs[deal], *rowinds_alt[dim], *colptrs_alt[dim];
-    double *pps[deal], *qqs[deal];
+    int    deal;
+    int    ms[dim], ms_rev[dim], rs[dim-1], locals_alt[dim], nrhss[dim-1], nrhss_rev[dim-1], nnzs_alt[dim];
+    int    *locals, *nnzs;
+    double *nzvals_alt[dim];
+    double **nzvals;
+    int_t  *rowinds_alt[dim], *colptrs_alt[dim];
+    int_t  **rowinds, **colptrs;
+    double **pps, **qqs;
     double *TTcores[dim];
-    double *Us[deal], *Vs[deal];
+    double **Us, **Vs;
     double las_all[dim-2], uas_all[dim-2], lbs_all[dim-2], ubs_all[dim-2];
-    double las[deal-1], uas[deal-1], lbs[deal-1], ubs[deal-1];
-    int_t lls[deal];
+    double *las, *uas, *lbs, *ubs;
+    int_t  *lls;
     int    m_A, m_B, m_C, m_D, m_E, mm, rr;
     int    nprow1, npcol1, nprow2, npcol2, lookahead, colperm, rowperm, ir, symbfact;
     int    nprows[2], npcols[2], grid_proc[2];
@@ -371,9 +374,27 @@ int main(int argc, char *argv[])
         fflush(stdout);
     }
 
-    if (grid2.iam != -1) {
+    if (grid1.iam != -1) {
+        deal = 3;
+    }
+    else if (grid2.iam != -1) {
         deal = 2;
     }
+
+    locals = SUPERLU_MALLOC(deal*sizeof(int));
+    nnzs = SUPERLU_MALLOC(deal*sizeof(int));
+    nzvals = SUPERLU_MALLOC(deal*sizeof(double*));
+    rowinds = SUPERLU_MALLOC(deal*sizeof(int_t*));
+    colptrs = SUPERLU_MALLOC(deal*sizeof(int_t*));
+    pps = SUPERLU_MALLOC(deal*sizeof(double*));
+    qqs = SUPERLU_MALLOC(deal*sizeof(double*));
+    lls = SUPERLU_MALLOC(deal*sizeof(int_t));
+    Us = SUPERLU_MALLOC(deal*sizeof(double*));
+    Vs = SUPERLU_MALLOC(deal*sizeof(double*));
+    las = SUPERLU_MALLOC((deal-1)*sizeof(double));
+    uas = SUPERLU_MALLOC((deal-1)*sizeof(double));
+    lbs = SUPERLU_MALLOC((deal-1)*sizeof(double));
+    ubs = SUPERLU_MALLOC((deal-1)*sizeof(double));
     
     // printf("Global rank is %d, id in grid_A is %d, id in grid_B is %d, it has A comm %d, and it has B comm %d.\n", 
     //     global_rank, grid_A.iam, grid_B.iam, grid_A.comm != MPI_COMM_NULL, grid_B.comm != MPI_COMM_NULL);
@@ -716,6 +737,21 @@ int main(int argc, char *argv[])
         SUPERLU_FREE(trueX_global);
     }
 
+    SUPERLU_FREE(locals);
+    SUPERLU_FREE(nnzs);
+    SUPERLU_FREE(nzvals);
+    SUPERLU_FREE(rowinds);
+    SUPERLU_FREE(colptrs);
+    SUPERLU_FREE(pps);
+    SUPERLU_FREE(qqs);
+    SUPERLU_FREE(lls);
+    SUPERLU_FREE(Us);
+    SUPERLU_FREE(Vs);
+    SUPERLU_FREE(las);
+    SUPERLU_FREE(uas);
+    SUPERLU_FREE(lbs);
+    SUPERLU_FREE(ubs);
+    
     fclose(fp_A);
     fclose(fp_B);
     fclose(fp_C);
