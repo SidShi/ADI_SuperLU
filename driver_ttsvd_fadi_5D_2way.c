@@ -676,9 +676,9 @@ int main(int argc, char *argv[])
         printf("Get solution!\n");
         fflush(stdout);
     }
-    printf("Proc %d in Grid1 and %d in Grid2 gets TT rank %d, %d, %d, %d!\n", 
-        iam1, iam2, rs[0], rs[1], rs[2], rs[3]);
-    fflush(stdout);
+    // printf("Proc %d in Grid1 and %d in Grid2 gets TT rank %d, %d, %d, %d!\n", 
+    //     iam1, iam2, rs[0], rs[1], rs[2], rs[3]);
+    // fflush(stdout);
     MPI_Barrier(MPI_COMM_WORLD);
 
     // printf("id in grid_A is %d, id in grid_B is %d, id in grid_C is %d, finishes solving.\n", 
